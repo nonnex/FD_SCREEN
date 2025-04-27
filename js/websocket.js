@@ -1,13 +1,44 @@
 let ws;
 
-function connectWebSocket() {
+async function connectWebSocket() {
+    // In offline mode, skip WebSocket connection and render LocalStorage data directly
+    if (typeof APP_MODE !== 'undefined' && APP_MODE === 'offline') {
+        console.log('Offline mode: Skipping WebSocket connection, rendering LocalStorage data...');
+        // Clear existing UI
+        document.querySelectorAll('.drag-inner-list').forEach(column => {
+            column.innerHTML = '';
+        });
+
+        // Load orders (now async)
+        const { orders, virtualOrders } = await window.utils.loadOrders();
+
+        // Render orders and virtual orders from LocalStorage
+        for (const order of Object.values(orders)) {
+            await handleOrderCreated(order);
+        }
+        for (const event of Object.values(virtualOrders)) {
+            if (event.AuftragId.startsWith('E_')) {
+                await handleEventCreated(event);
+            } else {
+                await handleOrderCreated(event); // For V_99999
+            }
+        }
+
+        // Apply LocalStorage states after rendering
+        const { orders: updatedOrders, virtualOrders: updatedVirtualOrders } = await window.utils.loadOrders();
+        render.applyOrders(updatedOrders, false);
+        render.applyOrders(updatedVirtualOrders, true);
+        return;
+    }
+
+    // Online mode: Connect to WebSocket
     ws = new WebSocket(WEBSOCKET_URI); // Use the URI from config.php
     
     ws.onopen = function() {
         console.log('Connected to WebSocket server at ' + WEBSOCKET_URI);
     };
 
-    ws.onmessage = function(event) {
+    ws.onmessage = async function(event) {
         try {
             const message = JSON.parse(event.data);
             console.log('Received WebSocket message:', message);
@@ -20,37 +51,38 @@ function connectWebSocket() {
 
                 // Process initial orders
                 if (message.data.orders) {
-                    message.data.orders.forEach(orderMsg => {
+                    for (const orderMsg of message.data.orders) {
                         if (orderMsg.type === 'order_created') {
-                            handleOrderCreated(orderMsg.data);
+                            await handleOrderCreated(orderMsg.data);
                         }
-                    });
+                    }
                 }
 
                 // Process initial events
                 if (message.data.events) {
-                    message.data.events.forEach(eventMsg => {
+                    for (const eventMsg of message.data.events) {
                         if (eventMsg.type === 'event_created') {
-                            handleEventCreated(eventMsg.data);
+                            await handleEventCreated(eventMsg.data);
                         }
-                    });
+                    }
                 }
 
                 // Apply LocalStorage states after rendering
-                render.applyOrders(window.ordersState.orders, false);
-                render.applyOrders(window.ordersState.virtualOrders, true);
+                const { orders, virtualOrders } = await window.utils.loadOrders();
+                render.applyOrders(orders, false);
+                render.applyOrders(virtualOrders, true);
             } else if (message.type === 'order_created') {
-                handleOrderCreated(message.data);
+                await handleOrderCreated(message.data);
             } else if (message.type === 'order_updated') {
-                handleOrderUpdated(message.data);
+                await handleOrderUpdated(message.data);
             } else if (message.type === 'order_deleted') {
-                handleOrderDeleted(message.data);
+                await handleOrderDeleted(message.data);
             } else if (message.type === 'event_created') {
-                handleEventCreated(message.data);
+                await handleEventCreated(message.data);
             } else if (message.type === 'event_updated') {
-                handleEventUpdated(message.data);
+                await handleEventUpdated(message.data);
             } else if (message.type === 'event_deleted') {
-                handleEventDeleted(message.data);
+                await handleEventDeleted(message.data);
             }
         } catch (e) {
             console.error('Failed to parse WebSocket message:', event.data, e);
@@ -67,7 +99,7 @@ function connectWebSocket() {
     };
 }
 
-function handleOrderCreated(order) {
+async function handleOrderCreated(order) {
     const column = document.getElementById(`column-${order.Status}`);
     if (!column) {
         console.warn(`Column not found for status ${order.Status}`);
@@ -78,24 +110,25 @@ function handleOrderCreated(order) {
     const existingOrder = document.getElementById(order.AuftragId);
     if (existingOrder) {
         console.log(`Order ${order.AuftragId} already exists, updating instead`);
-        handleOrderUpdated(order);
+        await handleOrderUpdated(order);
         return;
     }
 
-    const html = render.renderItem(order, false);
+    const isVirtual = order.AuftragId.startsWith('V_') || order.AuftragId.startsWith('E_');
+    const html = render.renderItem(order, isVirtual);
     column.insertAdjacentHTML('beforeend', html);
     console.log(`Added order ${order.AuftragId} to column ${order.Status}`);
     utils.sortColumn(column);
 
     // Update LocalStorage
-    window.ordersState = utils.saveOrder(order, false);
+    window.ordersState = await utils.saveOrder(order, isVirtual);
 }
 
-function handleOrderUpdated(order) {
+async function handleOrderUpdated(order) {
     const orderEl = document.getElementById(order.AuftragId);
     if (!orderEl) {
         console.log(`Order ${order.AuftragId} not found, creating instead`);
-        handleOrderCreated(order);
+        await handleOrderCreated(order);
         return;
     }
 
@@ -126,22 +159,22 @@ function handleOrderUpdated(order) {
     }
 
     // Update LocalStorage
-    window.ordersState = utils.saveOrder(order, false);
+    window.ordersState = await utils.saveOrder(order, order.AuftragId.startsWith('V_') || order.AuftragId.startsWith('E_'));
     console.log(`Updated order ${order.AuftragId}`);
 }
 
-function handleOrderDeleted(data) {
+async function handleOrderDeleted(data) {
     const orderEl = document.getElementById(data.AuftragId);
     if (orderEl) {
         const column = orderEl.parentNode;
         orderEl.remove();
         console.log(`Removed order ${data.AuftragId}`);
         utils.sortColumn(column);
-        window.ordersState = utils.deleteOrder(data.AuftragId, false);
+        window.ordersState = await utils.deleteOrder(data.AuftragId, false);
     }
 }
 
-function handleEventCreated(event) {
+async function handleEventCreated(event) {
     const column = document.getElementById('column-1'); // Events go in NEU column
     if (!column) {
         console.warn(`Column not found for events (status 1)`);
@@ -150,7 +183,7 @@ function handleEventCreated(event) {
 
     if (document.getElementById(event.AuftragId)) {
         console.log(`Event ${event.AuftragId} already exists, updating instead`);
-        handleEventUpdated(event);
+        await handleEventUpdated(event);
         return;
     }
 
@@ -160,14 +193,14 @@ function handleEventCreated(event) {
     utils.sortColumn(column);
 
     // Update LocalStorage
-    window.ordersState = utils.saveOrder(event, true);
+    window.ordersState = await utils.saveOrder(event, true);
 }
 
-function handleEventUpdated(event) {
+async function handleEventUpdated(event) {
     const eventEl = document.getElementById(event.AuftragId);
     if (!eventEl) {
         console.log(`Event ${event.AuftragId} not found, creating instead`);
-        handleEventCreated(event);
+        await handleEventCreated(event);
         return;
     }
 
@@ -193,18 +226,18 @@ function handleEventUpdated(event) {
     }
 
     // Update LocalStorage
-    window.ordersState = utils.saveOrder(event, true);
+    window.ordersState = await utils.saveOrder(event, true);
     console.log(`Updated event ${event.AuftragId}`);
 }
 
-function handleEventDeleted(data) {
+async function handleEventDeleted(data) {
     const eventEl = document.getElementById(data.AuftragId);
     if (eventEl) {
         const column = eventEl.parentNode;
         eventEl.remove();
         console.log(`Removed event ${data.AuftragId}`);
         utils.sortColumn(column);
-        window.ordersState = utils.deleteOrder(data.AuftragId, true);
+        window.ordersState = await utils.deleteOrder(data.AuftragId, true);
     }
 }
 

@@ -24,7 +24,7 @@ function initUI() {
     .on('drag', function (el) {
         el.className = el.className.replace('ex-moved', '');
     })
-    .on('drop', function (el, target, source) {
+    .on('drop', async function (el, target, source) {
         if (!el.id || el.dataset.draggable === 'false') {
             console.log(`Skipping drop handling for invalid element: id=${el.id}`);
             return;
@@ -36,15 +36,24 @@ function initUI() {
         const Tag = utils.tagMapping[Status];
 
         const isVirtual = AuftragId.startsWith('V_') || AuftragId.startsWith('E_');
-        const targetOrders = isVirtual ? window.ordersState.virtualOrders : window.ordersState.orders;
-        targetOrders[AuftragId] = {
-            Status: Status,
-            AuftragsKennung: AuftragsKennung,
-            Tags: [Tag],
-            ShowPos: targetOrders[AuftragId]?.ShowPos ?? 1
-        };
-        localStorage.setItem(isVirtual ? 'virtual_orders' : 'orders', JSON.stringify(targetOrders));
-        console.log(`Updated LocalStorage for ${AuftragId} (${isVirtual ? 'virtual' : 'real'}):`, targetOrders[AuftragId]);
+        // Load the full order object from LocalStorage
+        const { orders, virtualOrders } = await utils.loadOrders();
+        const targetOrders = isVirtual ? virtualOrders : orders;
+        const order = targetOrders[AuftragId];
+
+        if (!order) {
+            console.error(`Order ${AuftragId} not found in LocalStorage`);
+            return;
+        }
+
+        // Update the relevant fields
+        order.Status = Status;
+        order.AuftragsKennung = AuftragsKennung;
+        order.Tags = [Tag];
+
+        // Save the full order object back to LocalStorage
+        window.ordersState = await utils.saveOrder(order, isVirtual);
+        console.log(`Updated LocalStorage for ${AuftragId} (${isVirtual ? 'virtual' : 'real'}):`, order);
 
         el.dataset.status = Status;
 
@@ -92,22 +101,24 @@ function initUI() {
     });
 
     // Update ShowPos in LocalStorage
-    function sendShowPos(AuftragId, State) {
+    async function sendShowPos(AuftragId, State) {
         if (!AuftragId || AuftragId === '0') {
             console.warn(`Invalid AuftragId for ShowPos: ${AuftragId}`);
             return;
         }
         const isVirtual = AuftragId.startsWith('V_') || AuftragId.startsWith('E_');
-        const targetOrders = isVirtual ? window.ordersState.virtualOrders : window.ordersState.orders;
-        targetOrders[AuftragId] = targetOrders[AuftragId] || {
+        const { orders, virtualOrders } = await utils.loadOrders();
+        const targetOrders = isVirtual ? virtualOrders : orders;
+        const order = targetOrders[AuftragId] || {
+            AuftragId: AuftragId,
             Status: 1,
             AuftragsKennung: 1,
             Tags: [utils.tagMapping[1]],
             ShowPos: 1
         };
-        targetOrders[AuftragId].ShowPos = State;
-        localStorage.setItem(isVirtual ? 'virtual_orders' : 'orders', JSON.stringify(targetOrders));
-        console.log(`ShowPos updated for ${AuftragId} (${isVirtual ? 'virtual' : 'real'}):`, targetOrders[AuftragId]);
+        order.ShowPos = State;
+        window.ordersState = await utils.saveOrder(order, isVirtual);
+        console.log(`ShowPos updated for ${AuftragId} (${isVirtual ? 'virtual' : 'real'}):`, order);
     }
 
     // Clock and date display
@@ -136,13 +147,13 @@ function initUI() {
     }
 
     // Loading animation for delivery button
-    function Loading(f_button) {
+    async function Loading(f_button) {
         f_button.prop('disabled', true);
         f_button.attr('style', 'width:14px; height:14px;');
         if (f_button.attr('src')) {
             f_button.attr('src', 'img/UI/loading.gif');
         }
-        setTimeout(function() {
+        setTimeout(async function() {
             f_button.html('<span style="color:#00FF00;">Gespeichert</span>');
             f_button.attr('style', 'background:url(img/UI/delivery_1.svg) no-repeat;');
             if (f_button.attr('src')) {
@@ -174,12 +185,23 @@ function initUI() {
                 }
                 console.log(`Moved order ${AuftragId} to SHIPPED column`);
                 utils.sortColumn(shippedColumn);
+
+                // Update LocalStorage
+                const { orders } = await utils.loadOrders();
+                const order = orders[AuftragId];
+                if (order) {
+                    order.Status = 4;
+                    order.AuftragsKennung = 2;
+                    order.Tags = [utils.tagMapping[4]];
+                    window.ordersState = await utils.saveOrder(order, false);
+                    console.log(`Updated LocalStorage after delivery for ${AuftragId}:`, order);
+                }
             }
         }, 2000);
     }
 
     // Event handlers
-    $('body').on('submit', 'form.delivery-form', function(event) {
+    $('body').on('submit', 'form.delivery-form', async function(event) {
         event.preventDefault();
         
         const f_button = $(this).find('input[name="delivery_button"]');
@@ -203,14 +225,15 @@ function initUI() {
 
         console.log(`Delivery button clicked for AuftragId: ${v_AuftragId}, Tag: ${v_Tag}`);
 
-        window.ordersState.orders[v_AuftragId] = {
-            Status: 4,
-            AuftragsKennung: 2,
-            Tags: [utils.tagMapping[4]],
-            ShowPos: window.ordersState.orders[v_AuftragId]?.ShowPos ?? 1
-        };
-        localStorage.setItem('orders', JSON.stringify(window.ordersState.orders));
-        console.log(`LocalStorage updated for delivery ${v_AuftragId}:`, window.ordersState.orders[v_AuftragId]);
+        const { orders } = await utils.loadOrders();
+        const order = orders[v_AuftragId];
+        if (order) {
+            order.Status = 4;
+            order.AuftragsKennung = 2;
+            order.Tags = [utils.tagMapping[4]];
+            window.ordersState = await utils.saveOrder(order, false);
+            console.log(`LocalStorage updated for delivery ${v_AuftragId}:`, order);
+        }
 
         $(".form-group").removeClass("has-error");
         $(".help-block").remove();
@@ -254,7 +277,7 @@ function initUI() {
         });
     });
 
-    $('body').on('click', '.apply4job', function() {
+    $('body').on('click', '.apply4job', async function() {
         const $this = $(this);
         const AuftragId = $this.attr('id');
         if (!AuftragId || AuftragId === '0') {
@@ -264,7 +287,7 @@ function initUI() {
         $this.next().slideToggle();
         const State = $this.attr('src') === "img/UI/up.png" ? 0 : 1;
         $this.attr('src', State === 0 ? "img/UI/dn.png" : "img/UI/up.png");
-        sendShowPos(AuftragId, State);
+        await sendShowPos(AuftragId, State);
     });
 
     showTime();

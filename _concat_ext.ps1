@@ -22,10 +22,10 @@ $add_blank_lines = $true
 # Source definitions (array of hashtables)
 # Format: @{ Path = "path"; Recursive = $true/$false; Patterns = "pattern1 pattern2 ..." }
 $sources = @(
-    @{ Path = ".";      Recursive = $false;     Patterns = "config.php index.php srv_*.php" }
-	#@{ Path = "inc";    Recursive = $false;     Patterns = "lx_orders.php" }
-    @{ Path = "js";     Recursive = $false;     Patterns = "fd_dash.js" }
-    #@{ Path = "css";    Recursive = $false;     Patterns = "*.css" }
+#    @{ Path = ".";          Recursive = $false;     Patterns = "config.php index.php srv_*.php" }
+#	@{ Path = "mock_data";  Recursive = $false;     Patterns = "*.json" }
+    @{ Path = "js";         Recursive = $false;     Patterns = "*.js" }
+#    @{ Path = "css";        Recursive = $false;     Patterns = "*.css" }
 )
 
 # --------------------------------------

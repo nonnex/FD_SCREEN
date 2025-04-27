@@ -1,5 +1,20 @@
 function renderItem(item, isVirtual = false) {
-    const { AuftragId, AuftragsNr, AuftragsKennung, Datum_Erfassung, BestellNr, Liefertermin, KundenNr, KundenMatchcode, Status, ShowPos, Tags, Positionen } = item;
+    // Set default values for missing fields
+    const defaultItem = {
+        AuftragId: item.AuftragId || 'UNKNOWN',
+        AuftragsNr: item.AuftragsNr || '',
+        AuftragsKennung: item.AuftragsKennung || 1,
+        Datum_Erfassung: item.Datum_Erfassung || new Date().toISOString(),
+        BestellNr: item.BestellNr || '',
+        Liefertermin: item.Liefertermin || new Date().toISOString(),
+        KundenNr: item.KundenNr || '',
+        KundenMatchcode: item.KundenMatchcode || '',
+        Status: item.Status || 1,
+        ShowPos: item.ShowPos !== undefined ? item.ShowPos : 1,
+        Tags: item.Tags || [utils.tagMapping[1]],
+        Positionen: item.Positionen || []
+    };
+    const { AuftragId, AuftragsNr, AuftragsKennung, Datum_Erfassung, BestellNr, Liefertermin, KundenNr, KundenMatchcode, Status, ShowPos, Tags, Positionen } = defaultItem;
 
     const lieferterminDate = new Date(Liefertermin);
     const erfassungsdatumDate = new Date(Datum_Erfassung);
@@ -51,14 +66,14 @@ function renderItem(item, isVirtual = false) {
 
     for (const pos of Object.values(Positionen || [])) {
         const { PosNr, ArtikelId, ArtikelNr, Artikel_Bezeichnung, Artikel_Menge, Artikel_LagerId } = pos;
-        const available = Artikel_Menge + 5; // Mocked available quantity
+        const available = (Artikel_Menge || 0) + 5; // Mocked available quantity
         const checkIcon = isVirtual ? 'check_done.png' : (Status === 2 ? 'check_inproc.png' : 'check_done.png');
         html += `
-            <div class="table-row-artikelpos" ArtikelId="${ArtikelId}">
-                <div class="artikel-pos-artikelnr">${ArtikelNr}</div>
-                <div class="artikel-pos-bez">${Artikel_Bezeichnung}</div>
+            <div class="table-row-artikelpos" ArtikelId="${ArtikelId || ''}">
+                <div class="artikel-pos-artikelnr">${ArtikelNr || ''}</div>
+                <div class="artikel-pos-bez">${Artikel_Bezeichnung || ''}</div>
                 <div class="artikel-pos-verfuegbar">(${available})</div>
-                <div class="artikel-pos-menge">${Artikel_Menge.toLocaleString('de-DE', { minimumFractionDigits: 0 })}</div>
+                <div class="artikel-pos-menge">${(Artikel_Menge || 0).toLocaleString('de-DE', { minimumFractionDigits: 0 })}</div>
                 <div class="artikel-pos-check"><img src="img/UI/${checkIcon}" width="8px" height="8px" style="margin-top:-1px;" /></div>
             </div>
         `;
@@ -108,7 +123,7 @@ function applyOrders(orders, isVirtual = false) {
             }
         } else {
             const currentColumnId = orderEl.parentNode?.id;
-            const targetColumnId = isVirtual ? 'column-1' : `column-${order.Status}`;
+            const targetColumnId = isVirtual && auftragsNr.startsWith('E_') ? 'column-1' : `column-${order.Status || 1}`;
             if (order.Status && currentColumnId !== targetColumnId) {
                 const targetColumn = document.getElementById(targetColumnId);
                 if (targetColumn && orderEl.parentNode !== targetColumn) {
@@ -131,11 +146,11 @@ function applyOrders(orders, isVirtual = false) {
         }
         const colorBar = orderEl.querySelector('div[style*="background-color"]');
         if (colorBar) {
-            colorBar.style.backgroundColor = `#${utils.colorMapping[order.Status]}`;
+            colorBar.style.backgroundColor = `#${utils.colorMapping[order.Status || 1]}`;
         }
         const deliveryButton = orderEl.querySelector('.delivery-button');
         if (deliveryButton) {
-            const newIcon = utils.iconMapping[order.Tags[0]?.lTagId] || 'neu.svg';
+            const newIcon = utils.iconMapping[order.Tags?.[0]?.lTagId] || 'neu.svg';
             deliveryButton.src = `img/UI/${newIcon}`;
             deliveryButton.disabled = isVirtual;
         }
