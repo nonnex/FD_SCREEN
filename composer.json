@@ -1,9 +1,12 @@
 {
     "name": "yourcompany/erp-dashboard",
     "description": "ERP Dashboard with Real-Time Updates",
+    "license": "proprietary",
     "require": {
         "php": ">=8.2",
         "cboden/ratchet": "^0.4",
+        "react/socket": "^1.6",
+        "phrity/websocket": "^2.2",
         "ext-sqlanywhere": "*",
         "ext-pdo": "*"
     },

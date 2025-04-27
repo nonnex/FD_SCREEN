@@ -3,7 +3,7 @@
 # --------------------------------------
 
 # Output file
-$outfile = "Concatenated_Output.txt"
+$outfile = "_concat_ext.txt"
 
 # Enable headers for each file ($true = yes, $false = no)
 $use_headers = $true
@@ -22,10 +22,10 @@ $add_blank_lines = $true
 # Source definitions (array of hashtables)
 # Format: @{ Path = "path"; Recursive = $true/$false; Patterns = "pattern1 pattern2 ..." }
 $sources = @(
-    @{ Path = ".";      Recursive = $false;     Patterns = "*.php" }
-	@{ Path = "inc";    Recursive = $false;     Patterns = "config.php mock_*.php" }
-    @{ Path = "js";     Recursive = $false;     Patterns = "fd_dash.js fd_script.js" }
-    @{ Path = "css";    Recursive = $false;     Patterns = "*.css" }
+    @{ Path = ".";      Recursive = $false;     Patterns = "index.php srv_*.php" }
+	#@{ Path = "inc";    Recursive = $false;     Patterns = "lx_orders.php" }
+    @{ Path = "js";     Recursive = $false;     Patterns = "fd_dash.js" }
+    #@{ Path = "css";    Recursive = $false;     Patterns = "*.css" }
 )
 
 # --------------------------------------

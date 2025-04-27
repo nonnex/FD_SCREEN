@@ -1,6 +1,6 @@
 <?php
 // Define the application root directory
-define('APP_ROOT', dirname(__DIR__)); // Resolves to C:\xampp\htdocs\FD_SCREEN
+define('APP_ROOT', __DIR__);
 
 // Application mode: 'online' for database, 'offline' for dummy data
 define('APP_MODE', 'offline');
@@ -25,11 +25,16 @@ define('DATABASES', [
     ]
 ]);
 
+// Check for SSL certificates
+$certPath = APP_ROOT . '/certs/cert.pem';
+$keyPath = APP_ROOT . '/certs/key.pem';
+$useSsl = file_exists($certPath) && file_exists($keyPath);
+
 // WebSocket server settings
 define('WEBSOCKET_SERVER', [
     'host' => 'localhost',
     'port' => 8080,
-    'uri' => APP_MODE === 'online' ? 'wss://localhost:8080' : null
+    'uri' => $useSsl ? 'wss://localhost:8080' : 'ws://localhost:8080'
 ]);
 
 // Middleware settings
