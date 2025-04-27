@@ -1,8 +1,11 @@
 <?php
 include 'inc/config.php';
 if (APP_MODE === 'offline') {
-    include 'inc/mock_classes.php';
+    include 'inc/mock_orders.php';
+    include 'inc/mock_orders_virtual.php';
+    include 'inc/mock_events_calendar.php';
     $Lx_Orders = new Mock_Lx_Orders();
+    $Lx_Orders_Virtual = new Mock_Lx_Orders_Virtual();
     $Lx_Events = new Mock_Lx_Events();
 } else {
     include 'inc/db/db_lx.php';
@@ -17,7 +20,7 @@ if (APP_MODE === 'offline') {
 
 $LxData_AB = $Lx_Orders->GetAllOpenOrdersFromLX(1);
 $LxData_LS = $Lx_Orders->GetAllOpenOrdersFromLX(2);
-$MinOrder = $Lx_Orders->CreateMindestbestandOrder();
+$MinOrder = APP_MODE === 'offline' ? $Lx_Orders_Virtual->CreateMindestbestandOrder() : $Lx_Orders->CreateMindestbestandOrder();
 
 // Assign virtual order to distinct key
 $LxData_AB['V_99999'] = $MinOrder;
@@ -149,7 +152,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>NEU</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="1">
-                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 1) ?>
+                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_AB, 1) : $Lx_Orders->GetOrderContainer($LxData_AB, 1) ?>
                     <?= $Lx_Events->Print_Events($Events) ?>
                 </ul>
             </div>
@@ -158,7 +161,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Produktion</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="2">
-                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 2) ?>
+                    <?= APP_MODE === 'offline' ? ($Lx_Orders->GetOrderContainer($LxData_AB, 2) . $Lx_Orders_Virtual->GetOrderContainer([$MinOrder], 2)) : $Lx_Orders->GetOrderContainer($LxData_AB, 2) ?>
                 </ul>
             </div>
         </li>
@@ -166,7 +169,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Versandvorbereitung</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="3">
-                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 3) ?>
+                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_AB, 3) : $Lx_Orders->GetOrderContainer($LxData_AB, 3) ?>
                 </ul>
             </div>
         </li>
@@ -174,7 +177,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Auslieferung</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="4">
-                    <?= $Lx_Orders->GetOrderContainer($LxData_LS) ?>
+                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_LS) : $Lx_Orders->GetOrderContainer($LxData_LS) ?>
                 </ul>
             </div>
         </li>
