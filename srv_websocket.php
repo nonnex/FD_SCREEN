@@ -1,5 +1,4 @@
 <?php
-// Require config.php (which defines APP_ROOT)
 require_once __DIR__ . '/config.php';
 require_once APP_ROOT . '/vendor/autoload.php';
 
@@ -41,48 +40,52 @@ class OrderUpdateServer implements MessageComponentInterface {
         $this->log("Broadcasted message: " . $message);
     }
 
-    // Changed to public so it can be called from outside the class
     public function log($message) {
-        $logFile = APP_ROOT . '/logs/websocket.log';
-        $timestamp = date('Y-m-d H:i:s');
-        file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+        if (LOGGING['enabled']) {
+            $logFile = LOGGING['websocket_log'];
+            $timestamp = date('Y-m-d H:i:s');
+            file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+        }
     }
 }
 
-$loop = React\EventLoop\Factory::create();
-$server = new OrderUpdateServer();
+try {
+    $loop = React\EventLoop\Factory::create();
+    $server = new OrderUpdateServer();
 
-// Check for SSL certificates
-$certPath = APP_ROOT . '/certs/cert.pem';
-$keyPath = APP_ROOT . '/certs/key.pem';
-$useSsl = file_exists($certPath) && file_exists($keyPath);
+    $serverConfig = WEBSOCKET_SERVER;
+    $socket = new React\Socket\Server("{$serverConfig['host']}:{$serverConfig['port']}", $loop);
 
-$socket = new React\Socket\Server('0.0.0.0:8080', $loop);
+    if ($serverConfig['use_ssl']) {
+        $secureSocket = new React\Socket\SecureServer($socket, $loop, [
+            'local_cert' => $serverConfig['cert_path'],
+            'local_pk' => $serverConfig['key_path'],
+            'verify_peer' => false
+        ]);
+        $serverSocket = new Ratchet\Server\IoServer(
+            new Ratchet\Http\HttpServer(
+                new Ratchet\WebSocket\WsServer($server)
+            ),
+            $secureSocket,
+            $loop
+        );
+        $server->log("Starting WebSocket server with SSL (wss://)");
+    } else {
+        $serverSocket = new Ratchet\Server\IoServer(
+            new Ratchet\Http\HttpServer(
+                new Ratchet\WebSocket\WsServer($server)
+            ),
+            $socket,
+            $loop
+        );
+        $server->log("Starting WebSocket server without SSL (ws://)");
+    }
 
-if ($useSsl) {
-    $secureSocket = new React\Socket\SecureServer($socket, $loop, [
-        'local_cert' => $certPath,
-        'local_pk' => $keyPath,
-        'verify_peer' => false
-    ]);
-    $serverSocket = new Ratchet\Server\IoServer(
-        new Ratchet\Http\HttpServer(
-            new Ratchet\WebSocket\WsServer($server)
-        ),
-        $secureSocket,
-        $loop
-    );
-    $server->log("Starting WebSocket server with SSL (wss://)");
-} else {
-    $serverSocket = new Ratchet\Server\IoServer(
-        new Ratchet\Http\HttpServer(
-            new Ratchet\WebSocket\WsServer($server)
-        ),
-        $socket,
-        $loop
-    );
-    $server->log("Starting WebSocket server without SSL (ws://)");
+    $loop->run();
+} catch (\Exception $e) {
+    $errorMessage = "Failed to start WebSocket server: {$e->getMessage()}";
+    file_put_contents(LOGGING['websocket_log'], "[" . date('Y-m-d H:i:s') . "] $errorMessage\n", FILE_APPEND);
+    echo $errorMessage . "\n";
+    exit(1);
 }
-
-$loop->run();
 ?>

@@ -30,16 +30,26 @@ $certPath = APP_ROOT . '/certs/cert.pem';
 $keyPath = APP_ROOT . '/certs/key.pem';
 $useSsl = file_exists($certPath) && file_exists($keyPath);
 
-// WebSocket server settings
+// WebSocket server settings (for srv_websocket.php)
 define('WEBSOCKET_SERVER', [
-    'host' => 'localhost',
-    'port' => 8080,
-    'uri' => $useSsl ? 'wss://localhost:8080' : 'ws://localhost:8080'
+    'host' => '127.0.0.1', // Changed from 'localhost' to '127.0.0.1'
+    'port' => 8081,
+    'uri' => $useSsl ? 'wss://127.0.0.1:8081' : 'ws://127.0.0.1:8081', // Updated URI
+    'use_ssl' => $useSsl,
+    'cert_path' => $certPath,
+    'key_path' => $keyPath
 ]);
 
-// Middleware settings
+// Middleware settings (for srv_detector.php)
 define('MIDDLEWARE_SETTINGS', [
-    'poll_interval' => 5,
+    'poll_interval' => 10, // Seconds between polling for changes
     'log_file' => APP_ROOT . '/logs/middleware.log'
+]);
+
+// Logging settings
+define('LOGGING', [
+    'enabled' => true,
+    'websocket_log' => APP_ROOT . '/logs/websocket.log',
+    'middleware_log' => APP_ROOT . '/logs/middleware.log'
 ]);
 ?>
