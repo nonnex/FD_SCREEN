@@ -1,0 +1,15 @@
+{
+    "minify": [
+        {"path": "js", "recursive": true, "patterns": ["*.js"], "exclude_patterns": ["*.test.js", "*.spec.js"]},
+        {"path": "css", "recursive": true, "patterns": ["*.css"], "exclude_patterns": ["*.min.css"]},
+        {"path": "css/style.css", "recursive": false, "patterns": ["*.css"], "exclude_patterns": []}
+    ],
+    "sources": [
+        {"path": ".", "recursive": false, "patterns": ["*.php"], "use_minified": false, "exclude_patterns": []},
+        {"path": "inc", "recursive": false, "patterns": ["*.php"], "use_minified": false, "exclude_patterns": []},
+        {"path": "inc/db", "recursive": false, "patterns": ["*.php"], "use_minified": false, "exclude_patterns": []},
+        {"path": "mock_data", "recursive": true, "patterns": ["*.php"], "use_minified": false, "exclude_patterns": []},
+        {"path": "js", "recursive": false, "patterns": ["*.js"], "use_minified": true, "exclude_patterns": ["*.test.js", "*.spec.js"]},
+        {"path": "css", "recursive": false, "patterns": ["*.css"], "use_minified": true, "exclude_patterns": ["*.min.css"]}
+    ]
+}
