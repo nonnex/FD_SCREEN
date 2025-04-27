@@ -1,0 +1,22 @@
+[
+    {
+        "type": "order_created",
+        "data": {
+            "AuftragId": "V_99999",
+            "AuftragsNr": "99999",
+            "AuftragsKennung": 1,
+            "Datum_Erfassung": "2025-04-27 12:00:00",
+            "BestellNr": "Mindestbestand",
+            "Liefertermin": "2025-05-30",
+            "KundenNr": "",
+            "KundenMatchcode": "FERRODOM_V",
+            "Status": 2,
+            "ShowPos": 1,
+            "Tags": [{ "lTagId": 2, "szName": "Produktion" }],
+            "Positionen": [
+                { "PosNr": 2, "ArtikelId": "A001", "ArtikelNr": "ART001", "Artikel_Bezeichnung": "Produkt A", "Artikel_Menge": 15, "Artikel_LagerId": 1 },
+                { "PosNr": 3, "ArtikelId": "A002", "ArtikelNr": "ART002", "Artikel_Bezeichnung": "Produkt B", "Artikel_Menge": 5, "Artikel_LagerId": 1 }
+            ]
+        }
+    }
+]

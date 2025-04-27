@@ -1,0 +1,21 @@
+[
+    {
+        "type": "event_created",
+        "data": {
+            "AuftragId": "E_100000",
+            "AuftragsNr": "EVENT_001",
+            "AuftragsKennung": 1,
+            "Datum_Erfassung": "2025-04-28 09:00:00",
+            "BestellNr": "Event: Team Meeting",
+            "Liefertermin": "2025-04-28",
+            "KundenNr": "",
+            "KundenMatchcode": "CALENDAR",
+            "Status": 1,
+            "ShowPos": 1,
+            "Tags": [{ "lTagId": 4, "szName": "Neu" }],
+            "Positionen": [
+                { "PosNr": 1, "ArtikelId": 0, "ArtikelNr": "", "Artikel_Bezeichnung": "Team Meeting", "Artikel_Menge": 1, "Artikel_LagerId": 0 }
+            ]
+        }
+    }
+]

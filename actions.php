@@ -10,18 +10,25 @@ $Lx_Orders = new Lx_Orders();
 $errors = [];
 $data = [];
 
+function logError($message) {
+    $logFile = LOGGING['websocket_log'];
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($logFile, "[$timestamp] ERROR: $message\n", FILE_APPEND);
+}
+
 if ($_POST) {
-    if ($_POST['do'] == "SetDeliveryStatus") {
-        if (empty($_POST['AuftragId'])) { $errors['AuftragId'] = 'AuftragId is required.'; }
-        if (empty($_POST['Tag'])) { $errors['Tag'] = 'Tag is required.'; }
+    try {
+        if ($_POST['do'] == "SetDeliveryStatus") {
+            if (empty($_POST['AuftragId'])) { 
+                throw new Exception('AuftragId is required.'); 
+            }
+            if (empty($_POST['Tag'])) { 
+                throw new Exception('Tag is required.'); 
+            }
 
-        $Lx_Orders->SetOrderTags($_POST['AuftragId'], 4);
-        $Lx_Orders->SetDeliveryTime($_POST['AuftragId'], date('d.m.Y H:i'));
+            $Lx_Orders->SetOrderTags($_POST['AuftragId'], 4);
+            $Lx_Orders->SetDeliveryTime($_POST['AuftragId'], date('d.m.Y H:i'));
 
-        if (!empty($errors)) {
-            $data['success'] = false;
-            $data['errors'] = $errors;
-        } else {
             $data['success'] = true;
             $data['message'] = 'Gespeichert!';
             // Update LocalStorage
@@ -34,15 +41,27 @@ if ($_POST) {
             ];
             $data['orders'] = $orders;
         }
+    } catch (Exception $e) {
+        $errors['general'] = $e->getMessage();
+        $data['success'] = false;
+        $data['errors'] = $errors;
+        logError("SetDeliveryStatus failed: " . $e->getMessage());
     }
 
     echo json_encode($data, JSON_PRETTY_PRINT);
 }
 
 if ($_GET) {
-    if ($_GET['do'] == "get_warengruppen") {
-        $output = $Lx_Artikel->Get_Warengruppen();
-        echo json_encode(array_values($output), JSON_PRETTY_PRINT);
+    try {
+        if ($_GET['do'] == "get_warengruppen") {
+            $output = $Lx_Artikel->Get_Warengruppen();
+            echo json_encode(array_values($output), JSON_PRETTY_PRINT);
+        }
+    } catch (Exception $e) {
+        $data['success'] = false;
+        $data['errors'] = ['general' => $e->getMessage()];
+        echo json_encode($data, JSON_PRETTY_PRINT);
+        logError("get_warengruppen failed: " . $e->getMessage());
     }
 }
 ?>
