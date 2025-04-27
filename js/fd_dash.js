@@ -45,8 +45,78 @@ $(function() {
         5: { lTagId: 6, szName: 'Fakturieren' }
     };
 
+    // Color mapping for status (same as lx_orders.php)
+    const colorMapping = {
+        1: 'fb7d44', // Neu (Orange)
+        2: '2a92bf', // Produktion (Blue)
+        3: 'f4ce46', // Versandbereit (Yellow)
+        4: '00b961', // Versendet (Green)
+        5: '00b961'  // Fakturieren (Green)
+    };
+
+    // Icon mapping for status (same as lx_orders.php)
+    const iconMapping = {
+        4: 'neu.svg',         // Neu
+        2: 'inprod.svg',      // Produktion
+        5: 'vorb.svg',        // Versandbereit
+        1: 'delivery_0.svg',  // Versendet
+        6: 'fakturieren.svg'  // Fakturieren
+    };
+
+    // Function to parse delivery date from DOM (format: DD.MM.YY)
+    function parseDeliveryDate(dateStr) {
+        const parts = dateStr.split('.');
+        if (parts.length !== 3) return null;
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Months are 0-based in JS
+        const year = 2000 + parseInt(parts[2], 10); // Assuming 20XX
+        return new Date(year, month, day);
+    }
+
+    // Function to sort orders within a column by delivery date (ascending)
+    function sortColumn(column) {
+        const columnId = column.id;
+        const items = Array.from(column.children)
+            .filter(el => el.id && el.classList.contains('no-drag'));
+
+        // Separate V_99999 if in Production column (id="2")
+        let v99999 = null;
+        const otherItems = [];
+        if (columnId === '2') {
+            items.forEach(item => {
+                if (item.id === 'V_99999') {
+                    v99999 = item;
+                } else {
+                    otherItems.push(item);
+                }
+            });
+        } else {
+            otherItems.push(...items);
+        }
+
+        // Sort other items by delivery date (ascending)
+        otherItems.sort((a, b) => {
+            const dateA = parseDeliveryDate(a.querySelector('.table-cell-liefertermin')?.textContent.trim());
+            const dateB = parseDeliveryDate(b.querySelector('.table-cell-liefertermin')?.textContent.trim());
+            if (!dateA || !dateB) return 0;
+            return dateA - dateB; // Ascending
+        });
+
+        // Rebuild column
+        while (column.firstChild) {
+            column.removeChild(column.firstChild);
+        }
+        otherItems.forEach(item => column.appendChild(item));
+        if (v99999) {
+            column.appendChild(v99999); // Always append V_99999 at the bottom
+            console.log('Pinned V_99999 to bottom of Production column');
+        }
+
+        console.log(`Sorted column ${columnId} by delivery date (ascending)`);
+    }
+
     // Initialize dragula
-    dragula([
+    const drake = dragula([
         document.getElementById('1'),
         document.getElementById('2'),
         document.getElementById('3'),
@@ -55,6 +125,11 @@ $(function() {
         accepts: function (el, target, source, sibling) {
             if (!el.id || el.dataset.draggable === 'false') {
                 console.log(`Skipping drop for invalid element: id=${el.id}, draggable=${el.dataset.draggable}`);
+                return false;
+            }
+            // Prevent V_99999 from being dragged
+            if (el.id === 'V_99999') {
+                console.log('Prevented dragging of V_99999');
                 return false;
             }
             const currentStatus = parseInt(el.dataset.status) || 0;
@@ -66,14 +141,14 @@ $(function() {
     .on('drag', function (el) {
         el.className = el.className.replace('ex-moved', '');
     })
-    .on('drop', function (el) {
+    .on('drop', function (el, target, source) {
         if (!el.id || el.dataset.draggable === 'false') {
             console.log(`Skipping drop handling for invalid element: id=${el.id}`);
             return;
         }
         el.className += ' ex-moved';
         const AuftragId = el.id;
-        const Status = parseInt(el.parentNode.id);
+        const Status = parseInt(target.id);
         const AuftragsKennung = Status === 4 ? 2 : 1;
         const Tag = tagMapping[Status];
 
@@ -91,6 +166,29 @@ $(function() {
 
         // Update data-status attribute
         el.dataset.status = Status;
+
+        // Update visual elements
+        const colorBar = el.querySelector('div[style*="background-color"]');
+        if (colorBar) {
+            colorBar.style.backgroundColor = `#${colorMapping[Status]}`;
+            console.log(`Updated color for ${AuftragId} to ${colorMapping[Status]}`);
+        } else {
+            console.warn(`Color bar not found for ${AuftragId}`);
+        }
+
+        const deliveryButton = el.querySelector('.delivery-button');
+        if (deliveryButton) {
+            const newIcon = iconMapping[Tag.lTagId] || 'neu.svg';
+            deliveryButton.src = `img/UI/${newIcon}`;
+            deliveryButton.disabled = isVirtual;
+            console.log(`Updated icon for ${AuftragId} to ${newIcon}`);
+        } else {
+            console.warn(`Delivery button not found for ${AuftragId}`);
+        }
+
+        // Sort both source and target columns after drop
+        sortColumn(source);
+        sortColumn(target);
 
         // Sync with backend in online mode (only for real orders)
         if (typeof APP_MODE !== 'undefined' && APP_MODE === 'online' && !isVirtual) {
@@ -200,7 +298,19 @@ $(function() {
             if (orderEl && shippedColumn && orderEl !== shippedColumn && !shippedColumn.contains(orderEl)) {
                 shippedColumn.appendChild(orderEl);
                 orderEl.dataset.status = '4';
+                // Update visuals after delivery
+                const colorBar = orderEl.querySelector('div[style*="background-color"]');
+                if (colorBar) {
+                    colorBar.style.backgroundColor = `#${colorMapping[4]}`;
+                }
+                const deliveryButton = orderEl.querySelector('.delivery-button');
+                if (deliveryButton) {
+                    deliveryButton.src = 'img/UI/delivery_1.svg';
+                    deliveryButton.disabled = false;
+                }
                 console.log(`Moved order ${AuftragId} to SHIPPED column`);
+                // Sort the shipped column
+                sortColumn(shippedColumn);
             } else {
                 console.error(`Failed to move order ${AuftragId}: orderEl=${!!orderEl}, shippedColumn=${!!shippedColumn}, alreadyContains=${shippedColumn?.contains(orderEl)}`);
             }
@@ -301,29 +411,61 @@ $(function() {
             sendShowPos(AuftragId, State);
         });
 
-        // Apply LocalStorage to DOM
+        // Apply LocalStorage to DOM and remove duplicates
         function applyOrders(orders, isVirtual = false) {
+            // First, find and remove duplicate elements
+            const seenElements = new Set();
+            document.querySelectorAll('.drag-inner-list li').forEach(el => {
+                const auftragsNr = el.id;
+                if (!auftragsNr) return;
+                if (seenElements.has(auftragsNr)) {
+                    console.log(`Removing duplicate element for AuftragsNr: ${auftragsNr} (${isVirtual ? 'virtual' : 'real'})`);
+                    el.remove();
+                } else {
+                    seenElements.add(auftragsNr);
+                }
+            });
+
+            // Now apply LocalStorage states
             Object.keys(orders).forEach(auftragsNr => {
                 const order = orders[auftragsNr];
-                const orderEl = document.getElementById(auftragsNr);
+                let orderEl = document.getElementById(auftragsNr);
                 if (!orderEl) {
                     console.warn(`Order element not found for AuftragsNr: ${auftragsNr} (${isVirtual ? 'virtual' : 'real'})`);
                     return;
                 }
-                if (order.Status) {
-                    const targetColumn = document.getElementById(order.Status.toString());
-                    if (targetColumn && targetColumn !== orderEl.parentNode && orderEl !== targetColumn && !targetColumn.contains(orderEl)) {
-                        try {
-                            targetColumn.appendChild(orderEl);
-                            orderEl.dataset.status = order.Status;
-                            console.log(`Moved order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) to column ${order.Status}`);
-                        } catch (e) {
-                            console.error(`Failed to move order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) to column ${order.Status}: ${e.message}`);
+                // Prevent moving V_99999 from Production column
+                if (auftragsNr === 'V_99999') {
+                    const productionColumn = document.getElementById('2');
+                    if (orderEl.parentNode !== productionColumn) {
+                        productionColumn.appendChild(orderEl);
+                        order.Status = 2;
+                        order.AuftragsKennung = 1;
+                        order.Tags = [tagMapping[2]];
+                        virtualOrders[auftragsNr] = order;
+                        localStorage.setItem('virtual_orders', JSON.stringify(virtualOrders));
+                        console.log('Forced V_99999 back to Production column');
+                    }
+                } else {
+                    const currentColumnId = orderEl.parentNode?.id;
+                    const targetColumnId = order.Status.toString();
+                    if (order.Status && currentColumnId !== targetColumnId) {
+                        const targetColumn = document.getElementById(targetColumnId);
+                        if (targetColumn && orderEl !== targetColumn && !targetColumn.contains(orderEl)) {
+                            try {
+                                targetColumn.appendChild(orderEl);
+                                orderEl.dataset.status = order.Status;
+                                console.log(`Moved order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) to column ${order.Status}`);
+                            } catch (e) {
+                                console.error(`Failed to move order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) to column ${order.Status}: ${e.message}`);
+                            }
+                        } else if (!targetColumn) {
+                            console.warn(`Target column ${order.Status} not found for ${auftragsNr} (${isVirtual ? 'virtual' : 'real'})`);
+                        } else {
+                            console.log(`Order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) already in column ${order.Status}`);
                         }
-                    } else if (!targetColumn) {
-                        console.warn(`Target column ${order.Status} not found for ${auftragsNr} (${isVirtual ? 'virtual' : 'real'})`);
                     } else {
-                        console.warn(`Skipping move for ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}): already in column ${order.Status} or invalid hierarchy`);
+                        console.log(`Order ${auftragsNr} (${isVirtual ? 'virtual' : 'real'}) already in correct column ${currentColumnId}`);
                     }
                 }
                 const toggleImg = orderEl.querySelector('.apply4job');
@@ -335,6 +477,22 @@ $(function() {
                 } else {
                     console.warn(`Toggle image or positions div not found for ${auftragsNr} (${isVirtual ? 'virtual' : 'real'})`);
                 }
+                // Ensure visuals match status
+                const colorBar = orderEl.querySelector('div[style*="background-color"]');
+                if (colorBar) {
+                    colorBar.style.backgroundColor = `#${colorMapping[order.Status]}`;
+                }
+                const deliveryButton = orderEl.querySelector('.delivery-button');
+                if (deliveryButton) {
+                    const newIcon = iconMapping[order.Tags[0]?.lTagId] || 'neu.svg';
+                    deliveryButton.src = `img/UI/${newIcon}`;
+                    deliveryButton.disabled = isVirtual;
+                }
+            });
+
+            // Sort all columns after applying orders
+            document.querySelectorAll('.drag-inner-list').forEach(column => {
+                sortColumn(column);
             });
         }
 

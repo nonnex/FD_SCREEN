@@ -79,7 +79,7 @@ class Mock_Lx_Orders_Virtual {
             'BestellNr' => 'Mindestbestand',
             'Liefertermin' => $Liefertermin,
             'KundenNr' => '',
-            'KundenMatchcode' => 'FERRODOM',
+            'KundenMatchcode' => 'FERRODOM_V',
             'Status' => 2,
             'ShowPos' => 1,
             'Tags' => [

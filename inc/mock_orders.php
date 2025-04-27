@@ -1,43 +1,45 @@
 <?php
 class Mock_Lx_Orders {
     public function GetAllOpenOrdersFromLX($Kennung = 1) {
-        $mockData = [
-            '10001' => [
-                'AuftragId' => '10001',
-                'AuftragsNr' => '10001',
-                'AuftragsKennung' => $Kennung,
-                'Datum_Erfassung' => '2025-04-01 10:00:00',
-                'BestellNr' => 'BST10001',
-                'Liefertermin' => '2025-05-01',
-                'KundenNr' => 'K001',
-                'KundenMatchcode' => 'Kunde A',
-                'Status' => $Kennung === 2 ? 4 : 1,
-                'ShowPos' => 1,
-                'Tags' => $Kennung === 2 ? [['lTagId' => 1, 'szName' => 'Versendet']] : [['lTagId' => 4, 'szName' => 'Neu']],
-                'Positionen' => [
-                    1 => [
-                        'PosNr' => 1,
-                        'ArtikelId' => 'A001',
-                        'ArtikelNr' => 'ART001',
-                        'Artikel_Bezeichnung' => 'Produkt A',
-                        'Artikel_Menge' => 10,
-                        'Artikel_LagerId' => 1
+        $mockData = [];
+        if ($Kennung === 1) {
+            $mockData = [
+                '10001' => [
+                    'AuftragId' => '10001',
+                    'AuftragsNr' => '10001',
+                    'AuftragsKennung' => 1,
+                    'Datum_Erfassung' => '2025-04-01 10:00:00',
+                    'BestellNr' => 'BST10001',
+                    'Liefertermin' => '2025-05-01',
+                    'KundenNr' => 'K001',
+                    'KundenMatchcode' => 'Kunde A',
+                    'Status' => 1,
+                    'ShowPos' => 1,
+                    'Tags' => [['lTagId' => 4, 'szName' => 'Neu']],
+                    'Positionen' => [
+                        1 => [
+                            'PosNr' => 1,
+                            'ArtikelId' => 'A001',
+                            'ArtikelNr' => 'ART001',
+                            'Artikel_Bezeichnung' => 'Produkt A',
+                            'Artikel_Menge' => 10,
+                            'Artikel_LagerId' => 1
+                        ]
                     ]
-                ]
-            ],
-            '10002' => [
-                'AuftragId' => '10002',
-                'AuftragsNr' => '10002',
-                'AuftragsKennung' => $Kennung,
-                'Datum_Erfassung' => '2025-04-02 12:00:00',
-                'BestellNr' => 'BST10002',
-                'Liefertermin' => '2025-05-02',
-                'KundenNr' => 'K002',
-                'KundenMatchcode' => 'Kunde B',
-                'Status' => $Kennung === 2 ? 4 : 2,
-                'ShowPos' => 1,
-                'Tags' => $Kennung === 2 ? [['lTagId' => 1, 'szName' => 'Versendet']] : [['lTagId' => 2, 'szName' => 'Produktion']],
-                'Positionen' => [
+                ],
+                '10002' => [
+                    'AuftragId' => '10002',
+                    'AuftragsNr' => '10002',
+                    'AuftragsKennung' => 1,
+                    'Datum_Erfassung' => '2025-04-02 12:00:00',
+                    'BestellNr' => 'BST10002',
+                    'Liefertermin' => '2025-05-02',
+                    'KundenNr' => 'K002',
+                    'KundenMatchcode' => 'Kunde B',
+                    'Status' => 2,
+                    'ShowPos' => 1,
+                    'Tags' => [['lTagId' => 2, 'szName' => 'Produktion']],
+                    'Positionen' => [
                         1 => [
                             'PosNr' => 1,
                             'ArtikelId' => 'A002',
@@ -49,7 +51,56 @@ class Mock_Lx_Orders {
                     ]
                 ]
             ];
-        
+        } elseif ($Kennung === 2) {
+            $mockData = [
+                '10003' => [
+                    'AuftragId' => '10003',
+                    'AuftragsNr' => '10003',
+                    'AuftragsKennung' => 2,
+                    'Datum_Erfassung' => '2025-04-03 14:00:00',
+                    'BestellNr' => 'BST10003',
+                    'Liefertermin' => '2025-05-03',
+                    'KundenNr' => 'K003',
+                    'KundenMatchcode' => 'Kunde C',
+                    'Status' => 4,
+                    'ShowPos' => 1,
+                    'Tags' => [['lTagId' => 1, 'szName' => 'Versendet']],
+                    'Positionen' => [
+                        1 => [
+                            'PosNr' => 1,
+                            'ArtikelId' => 'A003',
+                            'ArtikelNr' => 'ART003',
+                            'Artikel_Bezeichnung' => 'Produkt C',
+                            'Artikel_Menge' => 8,
+                            'Artikel_LagerId' => 1
+                        ]
+                    ]
+                ],
+                '10004' => [
+                    'AuftragId' => '10004',
+                    'AuftragsNr' => '10004',
+                    'AuftragsKennung' => 2,
+                    'Datum_Erfassung' => '2025-04-04 16:00:00',
+                    'BestellNr' => 'BST10004',
+                    'Liefertermin' => '2025-05-04',
+                    'KundenNr' => 'K004',
+                    'KundenMatchcode' => 'Kunde D',
+                    'Status' => 4,
+                    'ShowPos' => 1,
+                    'Tags' => [['lTagId' => 1, 'szName' => 'Versendet']],
+                    'Positionen' => [
+                        1 => [
+                            'PosNr' => 1,
+                            'ArtikelId' => 'A004',
+                            'ArtikelNr' => 'ART004',
+                            'Artikel_Bezeichnung' => 'Produkt D',
+                            'Artikel_Menge' => 12,
+                            'Artikel_LagerId' => 1
+                        ]
+                    ]
+                ]
+            ];
+        }
         return $mockData;
     }
 
@@ -150,7 +201,7 @@ class Mock_Lx_Orders {
     }
 
     public function GetOrderInfo($AuftragsNr) {
-        $mockData = $this->GetAllOpenOrdersFromLX(1);
+        $mockData = array_merge($this->GetAllOpenOrdersFromLX(1), $this->GetAllOpenOrdersFromLX(2));
         return $mockData[$AuftragsNr] ?? [];
     }
 

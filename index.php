@@ -20,10 +20,23 @@ if (APP_MODE === 'offline') {
 
 $LxData_AB = $Lx_Orders->GetAllOpenOrdersFromLX(1);
 $LxData_LS = $Lx_Orders->GetAllOpenOrdersFromLX(2);
-$MinOrder = APP_MODE === 'offline' ? $Lx_Orders_Virtual->CreateMindestbestandOrder() : $Lx_Orders->CreateMindestbestandOrder();
 
-// Assign virtual order to distinct key
-$LxData_AB['V_99999'] = $MinOrder;
+// Merge $LxData_AB and $LxData_LS, prioritizing the latest status
+$LxData_All = [];
+foreach ($LxData_AB as $auftragsNr => $order) {
+    $LxData_All[$auftragsNr] = $order;
+}
+foreach ($LxData_LS as $auftragsNr => $order) {
+    if (isset($LxData_All[$auftragsNr])) {
+        // If order exists in both, prioritize $LxData_LS (AuftragsKennung=2, Status=4)
+        $LxData_All[$auftragsNr] = $order;
+    } else {
+        $LxData_All[$auftragsNr] = $order;
+    }
+}
+
+$MinOrder = APP_MODE === 'offline' ? $Lx_Orders_Virtual->CreateMindestbestandOrder() : $Lx_Orders->CreateMindestbestandOrder();
+$LxData_All['V_99999'] = $MinOrder;
 
 $Events = $Lx_Events->Get_Events();
 
@@ -31,7 +44,7 @@ $Events = $Lx_Events->Get_Events();
 $orders_init = [];
 $virtual_orders_init = [];
 $seen_auftrag_ids = [];
-foreach (array_merge($LxData_AB, $LxData_LS) as $auftragsNr => $order) {
+foreach ($LxData_All as $auftragsNr => $order) {
     if (!$order['AuftragId'] || $order['AuftragId'] === '0' || in_array($order['AuftragId'], $seen_auftrag_ids)) {
         error_log("Invalid or duplicate AuftragId for AuftragsNr: $auftragsNr, Order: " . print_r($order, true));
         continue;
@@ -152,7 +165,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>NEU</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="1">
-                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_AB, 1) : $Lx_Orders->GetOrderContainer($LxData_AB, 1) ?>
+                    <?= $Lx_Orders->GetOrderContainer($Lx_Orders->FilterByStatus($LxData_All, 1)) ?>
                     <?= $Lx_Events->Print_Events($Events) ?>
                 </ul>
             </div>
@@ -161,7 +174,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Produktion</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="2">
-                    <?= APP_MODE === 'offline' ? ($Lx_Orders->GetOrderContainer($LxData_AB, 2) . $Lx_Orders_Virtual->GetOrderContainer([$MinOrder], 2)) : $Lx_Orders->GetOrderContainer($LxData_AB, 2) ?>
+                    <?= $Lx_Orders->GetOrderContainer($Lx_Orders->FilterByStatus($LxData_All, 2)) ?>
                 </ul>
             </div>
         </li>
@@ -169,7 +182,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Versandvorbereitung</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="3">
-                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_AB, 3) : $Lx_Orders->GetOrderContainer($LxData_AB, 3) ?>
+                    <?= $Lx_Orders->GetOrderContainer($Lx_Orders->FilterByStatus($LxData_All, 3)) ?>
                 </ul>
             </div>
         </li>
@@ -177,7 +190,7 @@ console.log('Initialized LocalStorage (virtual_orders):', storedVirtualOrders);
             <span class="drag-column-header"><h2>Auslieferung</h2></span>
             <div class="order-container-col">
                 <ul class="drag-inner-list" id="4">
-                    <?= APP_MODE === 'offline' ? $Lx_Orders->GetOrderContainer($LxData_LS) : $Lx_Orders->GetOrderContainer($LxData_LS) ?>
+                    <?= $Lx_Orders->GetOrderContainer($Lx_Orders->FilterByStatus($LxData_All, 4)) ?>
                 </ul>
             </div>
         </li>
