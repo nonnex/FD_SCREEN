@@ -1,3 +1,4 @@
+/* Base styles */
 * {
   box-sizing: border-box;
 }
@@ -8,102 +9,82 @@ html {
 }
 
 body {
-  background: #33363D; /* Kept existing over #1a1a1a from index.php */
-  color: white;
-  font-family: "Inconsolata", monospace; /* Added monospace from index.php */
-  font-weight: 300;
+  background-color: #2a2e32;
+  color: #fff;
+  font-family: "Inconsolata", monospace;
+  font-size: 12px;
   line-height: 1.5;
-  font-size: 10px;
-  margin: 0;
-  padding: 0; /* Kept existing over padding: 20px from index.php */
-  height: 100%; /* needed for container min-height */
+  height: 100%;
 }
 
 a {
-  color: white;
+  color: #fff;
   text-decoration: none;
 }
 
 ul {
-  list-style-type: none;
+  list-style: none;
   margin: 0;
   padding: 0;
 }
 
 h3 {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 hr {
   border: none;
   height: 1px;
-  /* Set the hr color */
-  color: grey; /* old IE */
-  background-color: grey; /* Modern Browsers */
+  background-color: #666;
 }
 
 input[type="submit"], input[type="button"] {
-  color: inherit;
-  border: none;
-  padding: 3px;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-  min-width: 80px;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
-  border: 1px solid #1a73e8;
+  border: 1px solid #005566;
+  background-color: #005566;
+  color: #fff;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 3px 7px;
   border-radius: 3px;
-  background: #1a73e8;
-  font-weight: bold;
-  color: #ffffff;
+  min-width: 80px;
+  font-family: sans-serif;
+  cursor: pointer;
+  outline: none;
 }
 
 input[type="submit"]:hover, input[type="button"]:hover {
-  color: inherit;
-  border: none;
-  padding: 3px;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-  min-width: 80px;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 9px;
-  border: 1px solid #dadce0;
-  border-radius: 3px;
-  background: #ffffff;
-  font-weight: bold;
-  color: #1a73e8;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #005566;
 }
 
 input[type="button"].button_back, input[type="submit"].button_back {
-  border: 1px solid #dadce0;
-  color: #1a73e8;
-  background: #EEEEEE;
+  border: 1px solid #ccc;
+  background-color: #ddd;
+  color: #005566;
 }
 
 input[type="button"].button_back:hover, input[type="submit"].button_back:hover {
-  border: 1px solid #1a73e8;
-  color: #ffffff;
-  background: #1a73e8;
+  border: 1px solid #005566;
+  background-color: #005566;
+  color: #fff;
 }
 
+/* Drag container and list */
 .drag-container {
-  max-width: 1250px; /* Matches existing */
-  margin: 20px auto; /* Updated from 0px to match index.php */
-  height: auto !important; /* real browsers */
-  min-height: 100%; /* real browsers */
-  display: flex; /* From index.php */
-  flex-direction: column; /* From index.php */
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .drag-list {
   display: flex;
-  align-items: flex-start; /* Matches existing */
-  gap: 10px; /* From index.php */
-  list-style: none; /* From index.php */
-  padding: 0; /* From index.php */
-  margin: 0; /* From index.php */
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 @media (max-width: 690px) {
@@ -114,119 +95,115 @@ input[type="button"].button_back:hover, input[type="submit"].button_back:hover {
 
 .drag-column {
   flex: 1;
-  margin: 0 4px; /* Matches existing */
-  position: relative;
-  background: rgba(0, 0, 0, 0.2); /* Kept existing over #333 from index.php */
-  padding: 10px; /* From index.php */
-  border-radius: 5px; /* From index.php */
+  margin: 2px;
+  padding: 5px;
+  background-color: #18191b;
+  border-radius: 5px;
+  min-height: 400px;
   overflow: hidden;
-  min-height: 400px; /* From index.php */
 }
 
 @media (max-width: 690px) {
   .drag-column {
-    /* Existing style, no change needed */
+    margin: 5px 0;
   }
 }
 
 .drag-column h2 {    
-  font-size: 15px;
+  font-size: 16px;
   margin: 0;
   text-align: center;
-  width: 100%;
   text-transform: uppercase;
   font-weight: bold;
-  padding: 10px; /* From index.php */
-  border-radius: 5px; /* From index.php */
+  padding: 5px 10px;
+  border-radius: 3px;
 }
 
 .drag-column-on-hold .drag-column-header,
 .drag-column-on-hold .is-moved,
 .drag-column-on-hold .drag-options {
-  background: #FB7D44; /* Matches index.php .drag-column-on-hold .drag-column-header h2 */
+  background-color: #fb7d44;
 }
 
 .drag-column-in-progress .drag-column-header,
 .drag-column-in-progress .is-moved,
 .drag-column-in-progress .drag-options {
-  background: #2A92BF; /* Matches index.php .drag-column-in-progress .drag-column-header h2 */
+  background-color: #2a92bf;
 }
 
 .drag-column-needs-review .drag-column-header,
 .drag-column-needs-review .is-moved,
 .drag-column-needs-review .drag-options {
-  background: #F4CE46; /* Matches index.php .drag-column-needs-review .drag-column-header h2 */
+  background-color: #f4ce46;
 }
 
 .drag-column-approved .drag-column-header,
 .drag-column-approved .is-moved,
 .drag-column-approved .drag-options {
-  background: #00B961; /* Matches index.php .drag-column-approved .drag-column-header h2 */
+  background-color: #00b961;
 }
 
 .drag-column-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px;
-  margin-bottom: 20px; /* From index.php */
+  padding: 3px;
+  margin-bottom: 10px;
 }
 
-/* FD */
+/* Order container */
 .order-container {
   height: 100%;
-  padding: 0 0 0px 0; /* Matches existing */
-  background: #444; /* From index.php */
-  color: white; /* From index.php */
-  margin-bottom: 10px; /* From index.php */
-  border-radius: 5px; /* From index.php */
+  padding: 0;
+  background-color: #666;
+  color: #fff;
+  margin-bottom: 5px;
+  border-radius: 3px;
 }
 
 .order-container-col {
   height: 100%;
-  overflow: hidden;
   overflow-y: auto;
-  min-height: 300px; /* From index.php */
+  min-height: 300px;
 }
 
 .drag-inner-list {
   min-height: 620px;
-  list-style: none; /* From index.php */
-  padding: 0; /* From index.php */
-  margin: 0; /* From index.php */
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .drag-item, .no-drag {
-  margin-top: 8px;
-  min-height: auto;
-  background: #111111;
+  margin-top: 5px;
+  min-height: fit-content;
+  background-color: #333;
   color: #fff;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+  border-radius: 3px;
   overflow: hidden;
-  width: -webkit-fill-available;
+  width: 100%;
   display: table;
 }
 
 .drag-item.is-moving {
   transform: scale(1.5);
-  background: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .drag-header-more {
   cursor: pointer;
 }
 
-/* Demo info */
+/* Section */
 .section {
-  padding: 0px 0px 10px 0px;
-  margin: 0px;
+  padding: 0;
+  margin-bottom: 10px;
   text-align: center;
-  margin-bottom: 20px; /* From index.php */
 }
 
 .section a {
-  color: white;
+  color: #fff;
   text-decoration: none;
   font-weight: 300;
 }
@@ -241,114 +218,104 @@ input[type="button"].button_back:hover, input[type="submit"].button_back:hover {
 
 .clock {
   color: #fff;
-  font-size: 28px; /* Kept existing */
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 700;
   letter-spacing: 2px;
   display: table-cell;
-  border: 0px solid green;
-  font-size: 1.5em; /* From index.php, overrides 28px for better responsiveness */
 }
 
+/* Table styles */
 .table {
   width: 100%;
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   display: table;
 }
 
 .table-row {
   width: 100%;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   display: table-row;
 }
 
 .table-cell {
   display: table-cell;
   text-align: left;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .table-orderinfo {
-  background-color: #ddd;
-  color: #111;
-  font-weight: normal;
-  font-size: 9px;
+  background-color: #ccc;
+  color: #000;
+  font-weight: 400;
+  font-size: 10px;
   width: 100%;
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   display: table;
-  border: 0px solid red;
 }
 
 .table-row-orderinfo {
-  background: #111;
+  background-color: #333;
   color: #fff;
   width: 100%;
   display: table-row;
-  border: 0px solid green;
-  display: flex; /* From index.php */
-  justify-content: space-between; /* From index.php */
-  align-items: center; /* From index.php */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .table-cell-kunde {
-  width: auto;
-  font-size: 10px;
-  font-weight: bold;
+  font-size: 14px;
+  font-weight: 700;
   text-align: left;
   vertical-align: top;
   display: table-cell;
-  border: 0px solid blue;
-  flex: 1; /* From index.php */
+  flex: 1;
 }
 
 .table-cell-delivery {
-  width: 14px;
-  font-size: 9px;
+  width: 20px;
+  font-size: 10px;
   text-align: right;
   vertical-align: middle;
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   display: table-cell;
-  border: 0px solid blue;
   white-space: nowrap;
-  flex: 0 0 20px; /* From index.php, overrides existing width */
+  flex: none;
 }
 
 .delivery-form {
-  padding: 0px;
-  margin: 0px;
-  border: 0px solid yellow;
+  padding: 0;
+  margin: 0;
 }
 
 .delivery-button {
-  margin-top: 4px;
+  margin-top: 2px;
   border: none;
-  width: 14px; /* From index.php */
-  height: 14px; /* From index.php */
+  width: 20px;
+  height: 20px;
 }
 
 .table-cell-liefertermin {
-  width: 25%;
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 18px;
+  font-weight: 700;
   text-align: right;
   vertical-align: top;
   display: table-cell;
-  border: 0px solid blue;
   white-space: nowrap;
-  flex: 0 0 auto; /* From index.php */
+  flex: none;
 }
 
 .table-cell-AuftragsNr {
   display: table-cell;
   text-align: left;
   font-size: 6px;
-  border: 0px solid blue;
   padding-left: 2px;
   white-space: nowrap;
-  flex: 1; /* From index.php */
+  flex: 1;
 }
 
 .table-cell-BestellNr {
@@ -356,280 +323,253 @@ input[type="button"].button_back:hover, input[type="submit"].button_back:hover {
   text-align: right;
   font-size: 6px;
   padding-right: 6px;
-  border: 0px solid blue;
   white-space: nowrap;
-  flex: 0 0 auto; /* From index.php */
+  flex: none;
 }
 
-/*
-Auftragspositionen
-*/
+/* Auftragspositionen */
 .table-positions {
-  background-color: #ddd;
-  color: #111;
-  font-weight: normal;
-  font-size: 9px;
+  background-color: #ccc;
+  color: #000;
+  font-weight: 400;
+  font-size: 10px;
   width: 100%;
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   display: table;
   text-align: left;
-  border: 0px solid red;
 }
 
 .table-row-artikelpos {
   width: 100%;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   height: 12px;
-  line-height: 14px;
-  border-top: 1px solid grey;
-  display: inherit;
-  display: flex; /* From index.php */
-  justify-content: space-between; /* From index.php */
-  align-items: center; /* From index.php */
+  line-height: 16px;
+  border-top: 1px solid #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .artikel-pos-nr {
-  width: 25px;
+  width: 24px;
   vertical-align: middle;
   text-align: right;
-  padding-right: 5px;
+  padding-right: 4px;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .artikel-pos-artikelnr {
-  width: 47px;
+  width: 48px;
   font-size: 6px;
   vertical-align: middle;
   text-align: left;
   padding-left: 2px;
-  border: 0px solid blue;
   display: table-cell;
   white-space: nowrap;
-  flex: 1; /* From index.php */
+  flex: 1;
 }
 
 .artikel-pos-bez {
-  width: auto;
-  font-size: 9px;
+  font-size: 12px;
   vertical-align: middle;
   text-align: left;
-  padding-left: 0px;
+  padding-left: 0;
   display: table-cell;
-  border: 0px solid blue;
-  flex: 2; /* From index.php */
+  flex: 2;
 }
 
 .artikel-pos-lager {
-  width: 15px;
+  width: 16px;
   vertical-align: middle;
-  padding: 0px;
+  padding: 0;
   text-align: right;
-  margin-left: 0px;
+  margin-left: 0;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .artikel-pos-menge {
   width: 28px;
-  font-size: 9px;
+  font-size: 12px;
   vertical-align: middle;
-  padding-right: 0px;
+  padding-right: 0;
   text-align: right;
-  margin-left: 0px;
+  margin-left: 0;
   display: table-cell;
-  border: 0px solid blue;
-  flex: 0 0 auto; /* From index.php */
+  flex: none;
 }
 
 .artikel-pos-verfuegbar {
   width: 28px;
   font-size: 6px;
   vertical-align: middle;
-  padding-right: 0px;
+  padding-right: 0;
   text-align: right;
-  margin-left: 0px;
+  margin-left: 0;
   display: table-cell;
-  border: 0px solid blue;
-  flex: 0 0 auto; /* From index.php */
+  flex: none;
 }
 
 .artikel-pos-check {
-  width: 14px;
+  width: 20px;
   vertical-align: middle;
   padding-right: 2px;
   text-align: right;
-  margin-left: 0px;
+  margin-left: 0;
   display: table-cell;
-  border: 0px solid blue;
-  flex: 0 0 auto; /* From index.php */
+  flex: none;
 }
 
-/*
-Lager
-*/
+/* Lager */
 .lager-container {
-  max-width: 800px;
-  margin: 0px auto;
-  border: 0px solid blue;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .lager-artikel-container {
-  max-width: 500px;
-  margin: 0px auto;
+  max-width: 768px;
+  margin: 0 auto;
 }
 
 .lager-header {
-  background: #2A92BF;
-  border-radius: 5px 5px 0 0;
+  background-color: #2a92bf;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
   overflow: hidden;
 }
 
 .lager-footer {
-  background: #2A92BF;
-  border-radius: 0 0 5px 5px;
+  background-color: #2a92bf;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
   overflow: hidden;
-  height: 5px;
+  height: 4px;
 }
 
 .lager-column-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
-  height: 35px;
-  border: 0px solid lime;
+  padding: 8px;
+  height: 36px;
 }
 
 .lagerjournal-row {
   width: 100%;
-  margin: 0px;
+  margin: 0;
   height: auto;
-  line-height: auto;
-  border-top: 1px solid grey;
-  display: inherit;
+  border-top: 1px solid #666;
 }
 
 .lager-time {
-  width: 68px;
+  width: 64px;
   vertical-align: middle;
   text-align: right;
-  padding-left: 5px;
+  padding-left: 4px;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-status {
   width: 12px;
   vertical-align: middle;
   text-align: center;
-  margin-left: 1px;
-  padding-left: 0px;
+  margin-left: 2px;
+  padding-left: 0;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-artikelnr {
-  width: 70px;
+  width: 64px;
   vertical-align: middle;
   text-align: right;
-  margin-left: 1px;
-  padding-left: 0px;
+  margin-left: 2px;
+  padding-left: 0;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-bez {
-  width: 250px;
+  width: 256px;
   vertical-align: middle;
   text-align: left;
-  padding-left: 5px;
+  padding-left: 4px;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-menge {
-  width: 35px;
+  width: 36px;
   vertical-align: middle;
   text-align: right;
-  margin-left: 0px;
-  padding-left: 0px;
+  margin-left: 0;
+  padding-left: 0;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-auftrag {
-  width: 50px;
+  width: 48px;
   vertical-align: middle;
   text-align: right;
-  margin-left: 1px;
-  padding-left: 0px;
+  margin-left: 2px;
+  padding-left: 0;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-user {
   width: 80px;
   vertical-align: middle;
   text-align: left;
-  padding-left: 5px;
+  padding-left: 4px;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-change {
   vertical-align: middle;
   text-align: right;
-  padding-left: 5px;
+  padding-left: 4px;
   display: table-cell;
-  border: 0px solid blue;
 }
 
 .lager-input {
-  font-size: 9px;
+  font-size: 12px;
   text-align: right;
-  width: 70px;
-  line-height: 10px;
+  width: 64px;
+  line-height: 12px;
   vertical-align: middle;
 }
 
 .lager-input-comment {
-  font-size: 9px;
+  font-size: 12px;
   text-align: left;
-  width: 150px;
-  line-height: 10px;
+  width: 144px;
+  line-height: 12px;
   vertical-align: middle;
 }
 
-/*
-jquery-ui
-*/
+/* jQuery UI */
 .ui-widget-header {
-  border: 0px solid #e3a1a1;
-  background: #ffffff;
+  border: none;
+  background: #fff;
 }
 
 .ui-dialog .ui-dialog-titlebar-close {
-  border: 0px solid #c5c5c5;
-  background: #ffffff;
+  border: none;
+  background: #fff;
   font-weight: 400;
-  color: #454545;
+  color: #666;
 }
 
 .ui-dialog .ui-dialog-titlebar-close:visited {
-  border: 0px solid #c5c5c5;
-  background: #ffffff;
+  border: none;
+  background: #fff;
   font-weight: 400;
-  color: #454545;
+  color: #666;
 }
 
 .ui-dialog .ui-dialog-titlebar-close:hover {
-  border: 0px solid #c5c5c5;
-  background: #ffffff;
+  border: none;
+  background: #fff;
   font-weight: 400;
-  color: #454545;
+  color: #666;
 }
 
 .ui-state-hover,
@@ -640,33 +580,30 @@ jquery-ui
 .ui-widget-header .ui-state-focus,
 .ui-button:hover,
 .ui-button:focus {
-  border: 1px solid #1a73e8;
-  background: #1a73e8;
-  font-weight: bold;
-  color: #ffffff;
+  border: 1px solid #005566;
+  background: #005566;
+  font-weight: 700;
+  color: #fff;
 }
 
 .ui-button, .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default, html .ui-button.ui-state-disabled:active, html .ui-button.ui-state-disabled:hover {
-  border: 1px solid #dadce0;
-  background: #ffffff;
-  font-weight: bold;
-  color: #1a73e8;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-weight: 700;
+  color: #005566;
 }
 
 .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default, .ui-button, html .ui-button.ui-state-disabled:hover, html .ui-button.ui-state-disabled:active {
-  border: 1px solid #dadce0;
-  background: #ffffff; /* Fixed typo 'ffffff' from original */
-  font-weight: bold;
-  color: #1a73e8;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-weight: 700;
+  color: #005566;
 }
 
-/*
-full calendar
-*/
+/* FullCalendar */
 .cal-container {
-  border: 0px solid lime;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .fc .fc-bg-event {
@@ -675,47 +612,43 @@ full calendar
 }
 
 .fc .fc-bg-event .fc-event-title {
-  color: white;
-  margin-top: 5px;
+  color: #fff;
+  margin-top: 4px;
   margin-left: 40px;
 }
 
 .fc-theme-standard .fc-scrollgrid {
-  border-top: 1px solid grey;
-  border-left: 1px solid grey;
-  border-right: 1px solid grey;
-  border-bottom: 1px solid grey;
+  border: 1px solid #666;
 }
 
 .fc-theme-standard th {
-  border: 1px solid grey;
+  border: 1px solid #666;
 }
 
 .fc-theme-standard td {
-  border: 1px dashed grey;
+  border: 1px dashed #666;
 }
 
 .fc .fc-daygrid-week-number {
-  color: white;
+  color: #fff;
   text-decoration: none;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 1.5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 .fd-button {
   width: 120px;
-  padding: 4px; /* Kept existing over 10px 20px from index.php */
+  padding: 3px;
   text-align: center;
-  border: 1px solid #CCCCCC;
-  background-color: #444444;
-  border-radius: 5px;
-  color: white; /* From index.php */
-  text-decoration: none; /* From index.php */
+  border: 1px solid #666;
+  background-color: #444;
+  border-radius: 3px;
+  color: #fff;
 }
 
 .fd-button:hover {
-  background-color: #888888; /* Kept existing over #555 from index.php */
+  background-color: #666;
 }
 
 /* From index.php */
