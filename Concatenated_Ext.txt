@@ -1,0 +1,988 @@
+﻿/*------------------------------
+File: index.php
+------------------------------*/
+<?php
+include 'inc/config.php';
+if (APP_MODE === 'offline') {
+    include 'inc/mock_classes.php';
+    $Lx_Orders = new Mock_Lx_Orders();
+    $Lx_Events = new Mock_Lx_Events();
+} else {
+    include 'inc/db/db_lx.php';
+    include 'inc/db/db_fd.php';
+    include 'inc/lx_orders.php';
+    include 'inc/lx_lager.php';
+    include 'inc/lx_events.php';
+    include 'cron.php';
+    $Lx_Orders = new Lx_Orders();
+    $Lx_Events = new Lx_Events();
+}
+
+$LxData_AB = $Lx_Orders->GetAllOpenOrdersFromLX(1);
+$LxData_LS = $Lx_Orders->GetAllOpenOrdersFromLX(2);
+$MinOrder = $Lx_Orders->CreateMindestbestandOrder();
+$LxData_AB['9999'] = $MinOrder;
+$Events = $Lx_Events->Get_Events();
+
+// Prepare initial orders for LocalStorage
+$orders_init = [];
+foreach (array_merge($LxData_AB, $LxData_LS) as $auftragsNr => $order) {
+    $orders_init[$auftragsNr] = [
+        'Status' => $order['Status'],
+        'AuftragsKennung' => $order['AuftragsKennung'],
+        'Tags' => $order['Tags'],
+        'ShowPos' => $order['ShowPos']
+    ];
+}
+$orders_json = json_encode($orders_init);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AuftragsÃ¼bersicht</title>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/theme.min.css"/>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+</head>
+<body>
+<script>
+// Prevent Form resubmit on "F5"
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+
+// Expose APP_MODE to JavaScript
+const APP_MODE = '<?php echo APP_MODE; ?>';
+
+// Initialize LocalStorage with order statuses and ShowPos
+const initialOrders = <?php echo $orders_json; ?>;
+let storedOrders = JSON.parse(localStorage.getItem('orders') || '{}');
+// Flatten malformed structure if present
+if (storedOrders['0'] && Object.keys(storedOrders['0']).some(key => key !== 'Status' && key !== 'AuftragsKennung' && key !== 'Tags' && key !== 'ShowPos')) {
+    storedOrders = storedOrders['0'];
+    console.log('Flattened malformed LocalStorage in index.php');
+}
+Object.keys(initialOrders).forEach(auftragsNr => {
+    if (!storedOrders[auftragsNr]) {
+        storedOrders[auftragsNr] = initialOrders[auftragsNr];
+    }
+});
+localStorage.setItem('orders', JSON.stringify(storedOrders));
+
+$(document).ready(function() {
+    var iframe = $('<iframe style="width:100%;height:100%;overflow:hidden;" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe>');
+    var dialog = $('<div style="overflow:hidden;"></div>').append(iframe).appendTo("body").dialog({
+        autoOpen: false,
+        modal: true,
+        resizable: false,
+        width: "600",
+        height: "650",
+        close: function () {
+            iframe.attr("src", "");
+        }
+    });
+
+    $(".spedi").on("click", function (e) {
+        e.preventDefault();
+        var src = $(this).attr("href");
+        var title = $(this).attr("data-title");
+        var width = $(this).attr("data-width");
+        var height = $(this).attr("data-height");
+        iframe.attr({
+            width: +width,
+            height: +height,
+            src: src
+        });
+        dialog.dialog("option", "title", title).dialog("open");
+    });
+});
+</script>
+<div id="dialog"></div>
+<div id="dialog_DB" title="Basic dialog"></div>
+<div class="drag-container">
+    <section class="section" style="margin:0px;padding:0px;">
+        <div class="drag-column-header" style="margin:0px;padding:0px;">
+            <div id="MyDateDisplay" class="clock" onload="showTime()" style="width:35%; text-align:left; padding-left:5px;border:0px solid green;"></div>
+            <a href="lager.php"><div class="fd-button">Lagerverwaltung</div></a>
+            <a href="calendar/index.php"><div class="fd-button">Kalender</div></a>
+            <div id="MyClockDisplay" class="clock" onload="showTime()" style="width:30%; text-align:right; padding-right:5px;border:0px solid green;"></div>
+        </div>
+    </section>
+    <ul class="drag-list">
+        <li class="drag-column drag-column-on-hold">
+            <span class="drag-column-header"><h2>NEU</h2></span>
+            <div class="order-container-col">
+                <ul class="drag-inner-list" id="1">
+                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 1) ?>
+                    <?= $Lx_Events->Print_Events($Events) ?>
+                </ul>
+            </div>
+        </li>
+        <li class="drag-column drag-column-in-progress">
+            <span class="drag-column-header"><h2>Produktion</h2></span>
+            <div class="order-container-col">
+                <ul class="drag-inner-list" id="2">
+                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 2) ?>
+                </ul>
+            </div>
+        </li>
+        <li class="drag-column drag-column-needs-review">
+            <span class="drag-column-header"><h2>Versandvorbereitung</h2></span>
+            <div class="order-container-col">
+                <ul class="drag-inner-list" id="3">
+                    <?= $Lx_Orders->GetOrderContainer($LxData_AB, 3) ?>
+                </ul>
+            </div>
+        </li>
+        <li class="drag-column drag-column-approved">
+            <span class="drag-column-header"><h2>Auslieferung</h2></span>
+            <div class="order-container-col">
+                <ul class="drag-inner-list" id="4">
+                    <?= $Lx_Orders->GetOrderContainer($LxData_LS) ?>
+                </ul>
+            </div>
+        </li>
+    </ul>
+</div>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js'></script>
+<script src='./js/fd_dash.js'></script>
+<script src='./js/fd_script.js'></script>
+</body>
+</html>
+
+
+/*------------------------------
+File: inc\lx_orders.php
+------------------------------*/
+<?php
+include 'lx_artikel.php';
+
+class Lx_Orders 
+{
+    private $db_lx;
+    private $db_fd;
+    private $Lx_Lager;
+    private $Lx_Artikel;
+    private $AuftragsNr;
+    private $KundenMatchcode;
+    private $OrderData = array();
+    
+    public function __construct() {
+        $this->db_lx = new DB_LX();
+        $this->db_fd = new DB_FD();
+        $this->Lx_Lager = new Lx_Lager();
+        $this->Lx_Artikel = new Lx_Artikel();
+    }
+    
+    public function GetAllOpenOrdersFromLX($Kennung = 1, $storedOrders = []) {
+        $data = array();
+        $query = "
+        SELECT 
+            a.SheetNr as AuftragId,
+            a.AuftragsNr as AuftragsNr, 
+            a.AuftragsKennung as AuftragsKennung, 
+            a.BestellNr,
+            a.Datum_Erfassung as Datum_Erfassung, 
+            a.tsLieferTermin as Liefertermin,
+            a.KundenNr, 
+            a.KundenMatchcode,
+            a.szUserdefined1,
+            a.szUserdefined2,
+            a.szUserdefined3,
+            a.szUserdefined4,
+            a.szUserdefined5,
+            a.szUserdefined6,
+            p.PosNr as PosNr,
+            p.szPosNr as szPosNr,
+            p.PosTyp as PosTyp,
+            p.lLagerId as LagerId,
+            p.lArtikelID as ArtikelId,
+            p.ArtikelNr as ArtikelNr, 
+            p.Artikel_Bezeichnung as Artikel_Bezeichnung,
+            p.PosText as PosText,
+            p.Artikel_Menge as Menge 
+        FROM F1.FK_AuftragPos as p 
+        JOIN F1.FK_Auftrag as a on p.AuftragsNr = a.AuftragsNr AND p.AuftragsKennung = a.AuftragsKennung
+        WHERE 
+            a.AuftragsKennung = ".$Kennung." AND 
+            a.bStatus_Weitergefuehrt = 0 AND
+            a.bStatus_storniert = 0 AND 
+            a.bStatus_obsolet = 0 AND
+            a.bStatus_liefer_fakturiert = 0 AND
+            p.PosTyp <= 1 AND 
+            a.Datum_Erfassung >= '2002-01-01'
+        ";
+        $result = $this->db_lx->query($query);
+
+        while ($row = $this->db_lx->fetchArray($result)) {
+            $auftragsNr = $row['AuftragsNr'];
+            $data[$auftragsNr]['AuftragId'] = $row['AuftragId'];
+            $data[$auftragsNr]['AuftragsNr'] = $row['AuftragsNr'];
+            $data[$auftragsNr]['AuftragsKennung'] = $row['AuftragsKennung'];
+            $data[$auftragsNr]['Datum_Erfassung'] = $row['Datum_Erfassung'];
+            $data[$auftragsNr]['BestellNr'] = utf8_encode($row['BestellNr']);
+            $data[$auftragsNr]['Liefertermin'] = $row['Liefertermin'];    
+            $data[$auftragsNr]['KundenNr'] = $row['KundenNr'];
+            $data[$auftragsNr]['KundenMatchcode'] = utf8_encode($row['KundenMatchcode']);
+            $data[$auftragsNr]['szUserdefined1'] = utf8_encode($row['szUserdefined1']); // Versanddatum
+            $data[$auftragsNr]['szUserdefined2'] = utf8_encode($row['szUserdefined2']); // Transporteur
+            $data[$auftragsNr]['szUserdefined3'] = utf8_encode($row['szUserdefined3']); // Tracking
+            
+            // Default Status and ShowPos
+            $data[$auftragsNr]['Status'] = 1;
+            $data[$auftragsNr]['ShowPos'] = 1;
+            $data[$auftragsNr]['Tags'] = [['lTagId' => 4, 'szName' => 'Neu']];
+            
+            // Apply LocalStorage data if available
+            if (isset($storedOrders[$row['AuftragId']])) {
+                $data[$auftragsNr]['Status'] = $storedOrders[$row['AuftragId']]['Status'];
+                $data[$auftragsNr]['AuftragsKennung'] = $storedOrders[$row['AuftragId']]['AuftragsKennung'];
+                $data[$auftragsNr]['Tags'] = $storedOrders[$row['AuftragId']]['Tags'];
+                $data[$auftragsNr]['ShowPos'] = $storedOrders[$row['AuftragId']]['ShowPos'];
+            } else {
+                // Merge with ERP Tags if available
+                $erpTags = $this->GetOrderTags($row['AuftragId']);
+                if (!empty($erpTags)) {
+                    $data[$auftragsNr]['Tags'] = $erpTags;
+                }
+            }
+            
+            // Add Positionen
+            $ABez_tmp = $row['Artikel_Bezeichnung'] ?: ($row['PosText'] ?: '');
+            $data[$auftragsNr]['Positionen'][$row['PosNr']] = array(
+                'PosNr' => $row['PosNr'], 
+                'ArtikelId' => $row['ArtikelId'],
+                'ArtikelNr' => $row['ArtikelNr'],
+                'Artikel_Bezeichnung' => utf8_encode($ABez_tmp),
+                'Artikel_Menge' => $row['Menge'],
+                'Artikel_LagerId' => $row['LagerId']
+            );
+            ksort($data[$auftragsNr]['Positionen']); // Sort positions by PosNr ASC
+        }
+        
+        return $data;
+    }
+    
+    public function GetOrderInfo($AuftragsNr, $storedOrders = []) {
+        $query = "
+        SELECT 
+            a.SheetNr as AuftragId,
+            a.AuftragsNr as AuftragsNr, 
+            a.AuftragsKennung as AuftragsKennung, 
+            a.BestellNr,
+            a.Datum_Erfassung as Datum_Erfassung, 
+            a.tsLieferTermin as Liefertermin,
+            a.KundenNr, 
+            a.KundenMatchcode,
+            p.PosNr as PosNr,
+            p.szPosNr as szPosNr,
+            p.PosTyp as PosTyp,
+            p.lLagerId as LagerId,
+            p.lArtikelID as ArtikelId,
+            p.ArtikelNr as ArtikelNr, 
+            p.Artikel_Bezeichnung as Artikel_Bezeichnung,
+            p.PosText as PosText,
+            p.Artikel_Menge as Menge 
+        FROM F1.FK_AuftragPos as p 
+        JOIN F1.FK_Auftrag as a on p.AuftragsNr = a.AuftragsNr AND p.AuftragsKennung = a.AuftragsKennung
+        WHERE 
+            p.PosTyp <= 1 AND
+            a.AuftragsNr = '".$AuftragsNr."' AND 
+            a.Datum_Erfassung >= '2002-01-01'
+        ";
+        
+        $result = $this->db_lx->query($query);
+        $data = [];
+        
+        while ($row = $this->db_lx->fetchArray($result)) {
+            $data[$row['AuftragsNr']]['AuftragId'] = $row['AuftragId'];
+            $data[$row['AuftragsNr']]['AuftragsNr'] = $row['AuftragsNr'];
+            $data[$row['AuftragsNr']]['AuftragsKennung'] = $row['AuftragsKennung'];
+            $data[$row['AuftragsNr']]['Datum_Erfassung'] = $row['Datum_Erfassung'];
+            $data[$row['AuftragsNr']]['BestellNr'] = utf8_encode($row['BestellNr']);
+            $data[$row['AuftragsNr']]['Liefertermin'] = $row['Liefertermin'];    
+            $data[$row['AuftragsNr']]['KundenNr'] = $row['KundenNr'];
+            $data[$row['AuftragsNr']]['KundenMatchcode'] = utf8_encode($row['KundenMatchcode']);
+            
+            // Default Status and ShowPos
+            $data[$row['AuftragsNr']]['Status'] = 1;
+            $data[$row['AuftragsNr']]['ShowPos'] = 1;
+            $data[$row['AuftragsNr']]['Tags'] = [['lTagId' => 4, 'szName' => 'Neu']];
+            
+            // Apply LocalStorage data if available
+            if (isset($storedOrders[$row['AuftragId']])) {
+                $data[$row['AuftragsNr']]['Status'] = $storedOrders[$row['AuftragId']]['Status'];
+                $data[$row['AuftragsNr']]['AuftragsKennung'] = $storedOrders[$row['AuftragId']]['AuftragsKennung'];
+                $data[$row['AuftragsNr']]['Tags'] = $storedOrders[$row['AuftragId']]['Tags'];
+                $data[$row['AuftragsNr']]['ShowPos'] = $storedOrders[$row['AuftragId']]['ShowPos'];
+            } else {
+                // Merge with ERP Tags if available
+                $erpTags = $this->GetOrderTags($row['AuftragId']);
+                if (!empty($erpTags)) {
+                    $data[$row['AuftragsNr']]['Tags'] = $erpTags;
+                }
+            }
+            
+            // Add Positionen
+            $ABez_tmp = $row['Artikel_Bezeichnung'] ?: ($row['PosText'] ?: '');
+            $data[$row['AuftragsNr']]['Positionen'][$row['PosNr']] = array(
+                'PosNr' => $row['PosNr'], 
+                'ArtikelId' => $row['ArtikelId'],
+                'ArtikelNr' => $row['ArtikelNr'],
+                'Artikel_Bezeichnung' => utf8_encode($ABez_tmp),
+                'Artikel_Menge' => $row['Menge'],
+                'Artikel_LagerId' => $row['LagerId']
+            );
+            ksort($data[$row['AuftragsNr']]['Positionen']); // Sort positions by PosNr ASC
+        }
+        
+        return $data[$AuftragsNr] ?? [];
+    }
+    
+    public function GetOrderPosition($AuftragsNr, $Pos, $AuftragsKennung) {
+        $query = "SELECT PosNr, AuftragsNr, ArtikelNr, Artikel_Bezeichnung, PosText, Artikel_Einheit, Artikel_Menge, Artikel_Preisfaktor, lArtikelReservierungID 
+        FROM F1.FK_AuftragPos 
+        WHERE AuftragsKennung = ".$AuftragsKennung." AND AuftragsNr='".$AuftragsNr."' AND PosNr='".$Pos."'
+        ";
+        $res_1 = $this->db_lx->query($query);
+        return $this->db_lx->fetchArray($res_1);
+    }
+    
+    public function UpdateOrderPosition($AuftragsNr, $Pos, $Artikel_Menge, $lArtikelReservierungID, $AuftragsKennung) {
+        $query = "UPDATE F1.FK_AuftragPos SET Artikel_Menge='".$Artikel_Menge."', Artikel_Preisfaktor='".$Artikel_Menge."' 
+            WHERE AuftragsNr='".$AuftragsNr."' AND AuftragsKennung = ".$AuftragsKennung." AND PosNr='".$Pos."'";
+        $this->db_lx->query($query);
+        
+        $query = "SELECT * FROM F1.FK_Artikelreservierung WHERE lID = '".$lArtikelReservierungID."'";
+        $res = $this->db_lx->query($query);
+        $row = $this->db_lx->fetchArray($res);
+        
+        if ($row) {
+            $query = "UPDATE F1.FK_Artikelreservierung SET dftResMenge = '".$Artikel_Menge."' WHERE lID = '".$lArtikelReservierungID."'";        
+            $this->db_lx->query($query);
+        }
+    }
+    
+    public function Get_Tracking_Status($SST) {
+        $data = array('Status' => '');
+        $query = "SELECT * FROM fd_schenker_tracking WHERE SST = '".$SST."'";
+        $res = $this->db_fd->query($query);
+        $data = $this->db_fd->fetchArray($res);
+        return (count($data)) ? $data : null;
+    }
+        
+    public function CreateMindestbestandOrder() {
+        $data = $this->Lx_Lager->Get_Mindestbestand_All();
+        $Tmp = array();
+        $ret = array();
+        
+        foreach ($data as $key => $val) {
+            if ($val['lArtikelId']) {
+                $Tmp[$key]['lArtikelId'] = $val['lArtikelId'];
+                $Tmp[$key]['Lager'] = $this->Lx_Lager->Get_LagerInfo_By_Id($val['lArtikelId']);
+                
+                if ($Tmp[$key]['Lager']['Verfuegbar'] < $Tmp[$key]['Lager']['Mindestbestand']) {
+                    $ret[] = $Tmp[$key];
+                }
+            }
+        }
+        
+        $Liefertermin = new DateTime();
+        $Liefertermin = $Liefertermin->modify('+1 month +3 day')->format('Y-m-d');
+        
+        $MinOrder = array(
+            'AuftragId' => '',
+            'AuftragsNr' => '',
+            'AuftragsKennung' => '',
+            'Datum_Erfassung' => date('Y-m-d H:i:s'),
+            'BestellNr' => 'Mindestbestand',
+            'Liefertermin' => $Liefertermin,
+            'KundenNr' => '',
+            'KundenMatchcode' => 'FERRODOM',
+            'Status' => 2,
+            'ShowPos' => 1,
+            'Tags' => array(
+                0 => array(
+                    'lTagId' => 2,
+                    'szName' => 'Produktion',
+                ),
+            ),
+        );
+        
+        $p = 2;
+        $Positionen = array();
+        
+        foreach ($ret as $key => $val) {
+            $MinData = $this->Lx_Artikel->Get_Artikel_Info($val['lArtikelId']);
+            $Positionen[$p] = array(
+                'PosNr' => $p,
+                'ArtikelId' => $MinData['SheetNr'],
+                'ArtikelNr' => $MinData['ArtikelNr'],
+                'Artikel_Bezeichnung' => $MinData['Bezeichnung'],
+                'Artikel_Menge' => $val['Lager']['Mindestbestand'] - $val['Lager']['Verfuegbar'],
+                'Artikel_LagerId' => 1,
+            );
+            $p++;
+        }
+        
+        $MinOrder['Positionen'] = $Positionen;
+        return $MinOrder;
+    }
+    
+    public function FilterByStatus($Data, $Status) {
+        $Data_f = array();
+        foreach ($Data as $k => &$v) {
+            if ($Data[$k]['Status'] == $Status) {
+                $Data_f[$k] = $Data[$k];
+            }
+        }
+        return $Data_f;
+    }
+    
+    public function GetOrderTags($AuftragId) {
+        if (!$AuftragId) return [];
+        
+        $query = "SELECT 
+            z.lTagId as lTagId,
+            t.szName as szName
+            FROM F1.FK_Tag_Zuordnung as z
+            JOIN F1.FK_Tag as t on z.lTagId = t.lID
+            WHERE z.lAuftragId = '".$AuftragId."'
+        ";
+        $res = $this->db_lx->query($query);
+        
+        $Tags = array();
+        while ($row = $this->db_lx->fetchArray($res)) {
+            $Tags[] = $row;
+        }
+        
+        return $Tags;
+    }
+    
+    public function SetOrderTags($AuftragId, $Status) {
+        if (!$AuftragId) return;
+        
+        $TagArray = array(
+            1 => 4, // Neu
+            2 => 2, // Produktion
+            3 => 5, // Versandbereit
+            4 => 1, // Versendet
+            5 => 6, // Fakturieren
+        );
+        
+        $Tags = $this->GetOrderTags($AuftragId);
+        $TagId = $TagArray[$Status];
+        
+        if (!$Tags) {
+            $query = "INSERT INTO F1.FK_Tag_Zuordnung
+            (
+                `lID`, 
+                `lTagId`, 
+                `lAuftragId`,
+                `lKundeId`,
+                `lLieferantId`,
+                `lArtikelId`
+            )
+            VALUES 
+            (
+                null,
+                '".$TagId."', 
+                '".$AuftragId."', 
+                null, 
+                null,
+                null
+            )";
+        } else {
+            $query = "UPDATE F1.FK_Tag_Zuordnung SET lTagId ='".$TagId."' WHERE lAuftragId = '".$AuftragId."'";
+        }
+        
+        $res = $this->db_lx->query($query);
+        return $res;
+    }
+    
+    public function SetDeliveryTime($AuftragId, $DeliveryTime) {
+        $query = "UPDATE F1.FK_Auftrag SET szUserdefined1 = '".$DeliveryTime."' WHERE SheetNr = '".$AuftragId."'";
+        $res = $this->db_lx->query($query);
+        return $res;
+    }
+    
+    public function GetOrderContainer($Data, $Status = 0) {
+        $key_values = array_column($Data, 'Liefertermin'); 
+        array_multisort($key_values, SORT_ASC, $Data);
+        
+        if ($Status) {
+            $Data = $this->FilterByStatus($Data, $Status);
+        }
+        
+        $content = '';
+        
+        foreach ($Data as &$val) {
+            $Liefertermin = new DateTimeImmutable($val['Liefertermin']);
+            $Erfassungsdatum = new DateTimeImmutable($val['Datum_Erfassung']);
+            
+            $bc = match ($val['Status']) {
+                1 => 'fb7d44', // Neu
+                2 => '2a92bf', // Produktion
+                3 => 'f4ce46', // Versandbereit
+                4 => '00b961', // Versendet
+                default => '00b961'
+            };
+            
+            if (file_exists('img/clients/'.$val['KundenNr'].'.png')) {
+                $StrKunde = '<img src="img/clients/'.$val['KundenNr'].'.png" height="16px"/>';
+            } else {
+                $StrKunde = '<span style="padding-left:2px;font-size:14px;">'.$val['KundenMatchcode'].'</span>';
+            }
+            
+            $ShowPos = $val['ShowPos'] ? '' : 'display:none;';
+            $StateImg = $val['ShowPos'] ? 'up.png' : 'dn.png';
+            
+            $StrTags = '';
+            foreach ($val['Tags'] as $tags) {
+                $StrTags .= '['.$tags['lTagId'].':'. $tags['szName'].']';
+            }
+            
+            $StrVersand = '';
+            $TagIcon = '';
+            $StrSpedi = '';
+            $DeliveryStatus['Status'] = '';
+            
+            if ((isset($val['szUserdefined2']) && stristr($val['szUserdefined2'], 'Schenker')) && (isset($val['szUserdefined3']) && $val['szUserdefined3'])) {
+                $DeliveryStatus = $this->Get_Tracking_Status(trim($val['szUserdefined3']));
+                $DeliveryStatus = (isset($DeliveryStatus['Status'])) ? $DeliveryStatus : array('Status' => '') ;
+                $StrSpedi = '<a class="spedi" href="schenkerAPI/tracking.php?SST_Nr='.trim($val['szUserdefined3']).'"><img src="img/UI/DB.png" height="12px" style="padding-right:5px;"/></a>';
+            }
+            
+            if (@$val['Tags'][0]['lTagId']) {
+                if ($val['Tags'][0]['lTagId'] == 5 && !$DeliveryStatus['Status'])                $TagIcon = 'vorb.svg';
+                if ($val['Tags'][0]['lTagId'] == 5 && $DeliveryStatus['Status'])                $TagIcon = 'delivery_0.svg';
+                if ($val['Tags'][0]['lTagId'] == 5 && $DeliveryStatus['Status'] == 'Booked')    $TagIcon = 'delivery_2.svg';
+                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] != 'Delivered')    $TagIcon = 'delivery_0.svg';
+                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] == 'Delivered')    $TagIcon = 'delivery_1.svg';
+                if ($val['Tags'][0]['lTagId'] == 2)                                            $TagIcon = 'inprod.svg';
+                if ($val['Tags'][0]['lTagId'] == 4)                                            $TagIcon = 'neu.svg';
+                if ($val['Tags'][0]['lTagId'] == 6)                                            $TagIcon = 'fakturieren.svg';
+            }
+            
+            $TagIconEn = ($val['AuftragsKennung'] == 2 && $val['Tags'][0]['lTagId'] == 5 && stristr($val['szUserdefined2'], 'Schenker') != 'Schenker') ? '' : 'disabled';
+            $KennungStr = ($val['AuftragsKennung'] == 2) ? 'LS' : 'AB';
+                
+            $StrVersendetAm = '';
+            if ((isset($val['szUserdefined2']) && $val['szUserdefined2'])) {
+                $StrVersendetAm = ''.@$val['szUserdefined1'].'('.$val['szUserdefined2'].') '.$val['szUserdefined3'];
+            }
+            
+            $StrVersand .= '<form id="f_'.$val['AuftragId'].'" name="f_'.$val['AuftragId'].'" method="POST" class="delivery-form">
+                <input type="hidden" class="form-control" id="AuftragId" name="AuftragId" value="'.$val['AuftragId'].'" />
+                <input type="hidden" class="form-control" id="Tag" name="Tag" value="'.$val['Tags'][0]['lTagId'].'" />
+                <input type="image" src="img/UI/'.$TagIcon.'" class="delivery-button confirm" value="" id="delivery_button" name="delivery_button" '.$TagIconEn.' />
+            </form>';    
+            
+            $style_LT = '';
+            $today = new DateTime(date('Y-m-d'));
+            $dif_days = date_diff($today, $Liefertermin)->format('%r%a');
+            if ($dif_days <= 0)                    $style_LT = 'color:red;';
+            elseif ($dif_days > 0 && $dif_days <= 3)    $style_LT = 'color:#e55f00;';
+
+            $content .= '<li class="no-drag" id="'.$val['AuftragId'].'" style="min-height:34px;" data-status="'.$val['Status'].'">';    
+            $content .= '<div style="height:5px;background-color:#'.$bc.'"></div>
+                <div class="order-container">
+                    <div class="table-orderinfo">
+                        <div class="table-row-orderinfo">
+                            <div class="table-cell-kunde">'.$StrKunde.'</div>
+                            <div class="table-cell-delivery">'.$StrSpedi.'</div>
+                            <div class="table-cell-delivery">'.$StrVersand.'</div>
+                            <div class="table-cell-liefertermin" style="padding-right:5px;'.$style_LT.'">'.$Liefertermin->format('d.m.y').'</div>
+                        </div>
+                        <div class="table-row-orderinfo" style="position: relative; top:-4px;">
+                            <div class="table-cell-AuftragsNr">'.$KennungStr.' '.$val['AuftragsNr'].' '.$Erfassungsdatum->format('d.m.y').'</div>
+                            <div class="table-cell-delivery" style="font-size:6px;">'.$StrVersendetAm.'</div>
+                            <div class="table-cell-delivery"></div>
+                            <div class="table-cell-BestellNr">Bst: '.$val['BestellNr'].'</div>
+                        </div>
+                    </div>';
+                    
+            $content .= '<div style="width:auto;height:auto;text-align:center;border:0px solid blue;margin-top:-26px;">';
+            
+            if ($val['AuftragId']) {
+                $content .= '<img style="position: relative; top:-3px;" class="apply4job" id="'.$val['AuftragId'].'" height="12px" src="img/UI/'.$StateImg.'">';
+            } else {
+                $content .= '<img style="position: relative; top:-3px;" class="" id="'.$val['AuftragId'].'" height="12px" src="img/UI/'.$StateImg.'">';
+            }
+                
+            $state_check = '';
+            $style_v = '';
+            $str_verfueg = '';
+                        
+            $content .= '<!-- Show/Hide -->
+                    <div style="'.$ShowPos.'">
+                        <div class="table-positions" style="margin-top:6px;">';
+                        
+            if (is_array($val['Positionen'])) {
+                foreach ($val['Positionen'] as &$pos) {
+                    if ($pos['ArtikelId']) {
+                        $LInfo = $this->Lx_Lager->Get_LagerInfo_By_Id($pos['ArtikelId']);
+                        $ArtInfo = $this->Lx_Artikel->Get_Artikel_Info($pos['ArtikelId']);
+                        
+                        if ($LInfo['Verfuegbar'] >= 0) {
+                            $state_src = 'check_done';
+                        } else {
+                            $state_src = 'check_inproc';
+                        }
+                            
+                        if ($ArtInfo['bStatus_lager']) {
+                            $state_src = '';
+                            $style_v = '';
+                            
+                            if ($val['AuftragId']) {
+                                if ($LInfo['Verfuegbar'] >= 0) {
+                                    $state_src = 'check_done';
+                                    $style_v = 'color:green;';
+                                } elseif ($LInfo['Verfuegbar'] + $pos['Artikel_Menge'] <= 0) {
+                                    $state_src = 'check_red';
+                                    $style_v = 'color:red;';
+                                } elseif ($LInfo['Verfuegbar'] + $pos['Artikel_Menge'] > 0) {
+                                    $state_src = 'check_inproc';
+                                    $style_v = 'color:#e55f00;';
+                                }
+                            } else {
+                                if ($LInfo['Verfuegbar'] < $LInfo['Mindestbestand'] && $LInfo['Verfuegbar'] == 0) {
+                                    $state_src = 'check_red';
+                                    $style_v = 'color:red;';
+                                } else {
+                                    $state_src = 'check_inproc';
+                                    $style_v = 'color:#e55f00;';
+                                }
+                            }
+                            
+                            $str_verfueg = '('.number_format($LInfo['Verfuegbar'],0,',','.').')';
+                                
+                            $state_check = '<a id="foo" href="lager_artikel.php?ArtikelId='.$pos['ArtikelId'].'&AuftragsNr='.$val['AuftragsNr'].'&PosNr='.$pos['PosNr'].'&AuftragsKennung='.$val['AuftragsKennung'].'&Ref=index.php">
+                            <img src="img/UI/'.$state_src.'.png" width="8px" height=8px" style="margin-top:-1px;" class="apply4job2" />
+                            </a>';
+                        }
+                        
+                        $checkArr[$pos['PosNr']] = NULL;
+                        
+                        $checked = "";
+
+                        $content .= '<div style="'.$style_v.'" class="table-row-artikelpos" ArtikelId="'.$pos['ArtikelId'].'">
+                            <div class="artikel-pos-artikelnr">'.$pos['ArtikelNr'].'</div>
+                            <div class="artikel-pos-bez">'.$pos['Artikel_Bezeichnung'].'</div>
+                            <div class="artikel-pos-verfuegbar" style="'.$style_v.'">'.$str_verfueg.'</div>
+                            <div class="artikel-pos-menge">'.number_format($pos['Artikel_Menge'],0,',','.').'</div>
+                            <div class="artikel-pos-check">'.$state_check.'</div>
+                        </div>';
+                    } else {
+                        $content .= '<div style="'.$style_v.'" class="table-row-artikelpos" ArtikelId="'.$pos['ArtikelId'].'">
+                            <div class="artikel-pos-bez">'.$pos['Artikel_Bezeichnung'].'</div>
+                            <div class="artikel-pos-verfuegbar" style="'.$style_v.'">'.$str_verfueg.'</div>
+                            <div class="artikel-pos-menge">'.number_format($pos['Artikel_Menge'],0,',','.').'  </div>
+                        </div>';
+                    }
+                }
+            }
+            
+            $content .= '</div>
+                        </div>
+                    </div>
+                </div>
+            </li>';
+        }
+                    
+        return $content;
+    }
+}
+?>
+
+
+/*------------------------------
+File: js\fd_dash.js
+------------------------------*/
+$(function() {
+    // Initialize and flatten LocalStorage
+    let orders = JSON.parse(localStorage.getItem('orders') || '{}');
+    if (orders['0'] && Object.keys(orders['0']).some(key => key !== 'Status' && key !== 'AuftragsKennung' && key !== 'Tags' && key !== 'ShowPos')) {
+        console.log('Flattening malformed LocalStorage');
+        orders = orders['0'];
+        localStorage.setItem('orders', JSON.stringify(orders));
+    }
+
+    // Tag mapping for status updates
+    const tagMapping = {
+        1: { lTagId: 4, szName: 'Neu' },
+        2: { lTagId: 2, szName: 'Produktion' },
+        3: { lTagId: 5, szName: 'Versandbereit' },
+        4: { lTagId: 1, szName: 'Versendet' },
+        5: { lTagId: 6, szName: 'Fakturieren' }
+    };
+
+    // Initialize dragula
+    dragula([
+        document.getElementById('1'),
+        document.getElementById('2'),
+        document.getElementById('3'),
+        document.getElementById('4')
+    ], {
+        accepts: function (el, target, source, sibling) {
+            if (!el.id || el.dataset.draggable === 'false') {
+                console.log(`Skipping drop for invalid element: id=${el.id}, draggable=${el.dataset.draggable}`);
+                return false;
+            }
+            const currentStatus = parseInt(el.dataset.status) || 0;
+            const targetId = parseInt(target.id);
+            console.log(`Attempting to drop order ${el.id} from status ${currentStatus} to column ${targetId}`);
+            return true;
+        }
+    })
+    .on('drag', function (el) {
+        el.className = el.className.replace('ex-moved', '');
+    })
+    .on('drop', function (el) {
+        if (!el.id || el.dataset.draggable === 'false') {
+            console.log(`Skipping drop handling for invalid element: id=${el.id}`);
+            return;
+        }
+        el.className += ' ex-moved';
+        const AuftragId = el.id;
+        const Status = parseInt(el.parentNode.id);
+        const AuftragsKennung = Status === 4 ? 2 : 1;
+        const Tag = tagMapping[Status];
+
+        // Update LocalStorage
+        orders[AuftragId] = {
+            Status: Status,
+            AuftragsKennung: AuftragsKennung,
+            Tags: [Tag],
+            ShowPos: orders[AuftragId]?.ShowPos ?? 1
+        };
+        localStorage.setItem('orders', JSON.stringify(orders));
+        console.log(`Updated LocalStorage for ${AuftragId}:`, orders[AuftragId]);
+
+        // Update data-status attribute
+        el.dataset.status = Status;
+
+        // Sync with backend in online mode
+        if (typeof APP_MODE !== 'undefined' && APP_MODE === 'online') {
+            $.ajax({
+                type: 'POST',
+                url: 'actions.php',
+                data: {
+                    do: 'setDeliveryStatus',
+                    AuftragId: AuftragId,
+                    Status: Status,
+                    Tag: Tag.lTagId
+                },
+                success: function(data) {
+                    console.log('Backend updated:', data);
+                },
+                error: function(xhr) {
+                    console.error('Backend update failed:', xhr.responseText);
+                }
+            });
+        }
+    })
+    .on('over', function (el, container) {
+        container.className += ' ex-over';
+    })
+    .on('out', function (el, container) {
+        container.className = container.className.replace('ex-over', '');
+    });
+
+    // Update ShowPos in LocalStorage
+    function sendShowPos(AuftragId, State) {
+        orders[AuftragId] = orders[AuftragId] || {
+            Status: 1,
+            AuftragsKennung: 1,
+            Tags: [tagMapping[1]],
+            ShowPos: 1
+        };
+        orders[AuftragId].ShowPos = State;
+        localStorage.setItem('orders', JSON.stringify(orders));
+        console.log(`ShowPos updated for ${AuftragId}:`, orders[AuftragId]);
+    }
+
+    // Clock and date display
+    function showTime() {
+        const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+        const zeroPad = (num, places) => String(num).padStart(places, '0');
+        
+        const date = new Date();
+        const h = date.getHours();
+        const m = date.getMinutes();
+        const datestr = date.toLocaleDateString('de-DE', options);
+        const time = zeroPad(h, 2) + ":" + zeroPad(m, 2);
+        
+        const clock = document.getElementById("MyClockDisplay");
+        const dateDisplay = document.getElementById("MyDateDisplay");
+        if (clock) {
+            clock.innerText = time;
+            clock.textContent = time;
+        } else {
+            console.warn('MyClockDisplay element not found');
+        }
+        if (dateDisplay) {
+            dateDisplay.innerText = datestr;
+            dateDisplay.textContent = datestr;
+        } else {
+            console.warn('MyDateDisplay element not found');
+        }
+        
+        setTimeout(showTime, 1000);
+    }
+
+    // Loading animation for delivery button
+    function Loading(f_button) {
+        f_button.prop('disabled', true);
+        f_button.attr('style', 'width:14px; height:14px;');
+        if (f_button.attr('src')) {
+            f_button.attr('src', 'img/UI/loading.gif');
+        } else {
+            f_button.html('<img src="img/UI/loading.gif" height="14px" />');
+        }
+        setTimeout(function() {
+            f_button.html('<span style="color:#00FF00;">Gespeichert</span>');
+            f_button.attr('style', 'background:url(img/UI/delivery_1.svg) no-repeat;');
+            if (f_button.attr('src')) {
+                f_button.attr('src', 'img/UI/delivery_1.svg');
+            } else {
+                f_button.html(' ');
+            }
+            // Move order to SHIPPED column
+            const AuftragId = f_button.closest('form').find('input[name="AuftragId"]').val();
+            const orderEl = document.getElementById(AuftragId);
+            const shippedColumn = document.getElementById('4');
+            if (orderEl && shippedColumn) {
+                shippedColumn.appendChild(orderEl);
+                orderEl.dataset.status = '4';
+                console.log(`Moved order ${AuftragId} to SHIPPED column`);
+            } else {
+                console.error(`Failed to move order ${AuftragId}: orderEl=${!!orderEl}, shippedColumn=${!!shippedColumn}`);
+            }
+        }, 2000);
+    }
+
+    // Document ready
+    $(document).ready(function() {
+        // Delivery button form submission
+        $('input[name="delivery_button"]').closest("form").submit(function(event) {
+            event.preventDefault();
+            
+            const f_button = $(this).find('input[name="delivery_button"]');
+            const v_AuftragId = $(this).find('input[name="AuftragId"]').val();
+            const v_Tag = $(this).find('input[name="Tag"]').val();
+
+            if (!v_AuftragId || !v_Tag) {
+                console.error(`Invalid form data: AuftragId=${v_AuftragId}, Tag=${v_Tag}`);
+                f_button.html('<span style="color:red;">Invalid</span>');
+                f_button.attr('style', '');
+                return;
+            }
+
+            console.log(`Delivery button clicked for AuftragId: ${v_AuftragId}, Tag: ${v_Tag}`);
+
+            // Update LocalStorage
+            orders[v_AuftragId] = {
+                Status: 4,
+                AuftragsKennung: 2,
+                Tags: [tagMapping[4]],
+                ShowPos: orders[v_AuftragId]?.ShowPos ?? 1
+            };
+            localStorage.setItem('orders', JSON.stringify(orders));
+            console.log(`LocalStorage updated for delivery ${v_AuftragId}:`, orders[v_AuftragId]);
+
+            $(".form-group").removeClass("has-error");
+            $(".help-block").remove();
+
+            const formData = {
+                'do': 'setDeliveryStatus',
+                AuftragId: v_AuftragId,
+                Tag: v_Tag
+            };
+
+            // Sync with backend
+            $.ajax({
+                type: "POST",
+                url: "actions.php",
+                data: formData,
+                cache: false,
+                dataType: "JSON",
+                encode: true
+            })
+            .done(function(data) {
+                if (!data.success) {
+                    if (data.errors.AuftragId) {
+                        $("#AuftragId-group").addClass("has-error");
+                        f_button.html(data.errors.AuftragId);
+                        f_button.attr('style', '');
+                    }
+                    if (data.errors.Tag) {
+                        $("#Tag-group").addClass("has-error");
+                        f_button.html(data.errors.Tag);
+                        f_button.attr('style', '');
+                    }
+                    console.log('Errors:', data.errors);
+                } else {
+                    Loading(f_button);
+                    $("#dialog").dialog("close");
+                }
+            })
+            .fail(function(data) {
+                console.error('AJAX failed:', data.responseText);
+                f_button.html('<span style="color:red;">!conn</span>');
+                f_button.attr('style', '');
+            });
+        });
+
+        // ShowPos toggle
+        $(".apply4job").on("click", function() {
+            const $this = $(this);
+            const AuftragId = $this.attr('id');
+            $this.next().slideToggle();
+            const State = $this.attr('src') === "img/UI/up.png" ? 0 : 1;
+            $this.attr('src', State === 0 ? "img/UI/dn.png" : "img/UI/up.png");
+            sendShowPos(AuftragId, State);
+        });
+
+        // Apply LocalStorage to DOM
+        Object.keys(orders).forEach(auftragsNr => {
+            const order = orders[auftragsNr];
+            const orderEl = document.getElementById(auftragsNr);
+            if (!orderEl) {
+                console.warn(`Order element not found for AuftragsNr: ${auftragsNr}`);
+                return;
+            }
+            if (order.Status) {
+                const targetColumn = document.getElementById(order.Status.toString());
+                if (targetColumn && targetColumn !== orderEl.parentNode) {
+                    targetColumn.appendChild(orderEl);
+                    orderEl.dataset.status = order.Status;
+                    console.log(`Moved order ${auftragsNr} to column ${order.Status}`);
+                } else if (!targetColumn) {
+                    console.warn(`Target column ${order.Status} not found for ${auftragsNr}`);
+                }
+            }
+            const toggleImg = orderEl.querySelector('.apply4job');
+            const posDiv = orderEl.querySelector('.table-positions')?.parentNode;
+            if (toggleImg && posDiv) {
+                toggleImg.src = order.ShowPos ? 'img/UI/up.png' : 'img/UI/dn.png';
+                posDiv.style.display = order.ShowPos ? '' : 'none';
+                console.log(`Set ShowPos for ${auftragsNr}: ${order.ShowPos}`);
+            } else {
+                console.warn(`Toggle image or positions div not found for ${auftragsNr}`);
+            }
+        });
+
+        showTime();
+    });
+});
+
+

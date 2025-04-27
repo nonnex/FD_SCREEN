@@ -1,0 +1,1 @@
+Get-content -Path c:\xampp\apache\logs\error.log -wait -tail 50
