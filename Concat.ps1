@@ -23,7 +23,7 @@ $add_blank_lines = $true
 # Format: @{ Path = "path"; Recursive = $true/$false; Patterns = "pattern1 pattern2 ..." }
 $sources = @(
     @{ Path = ".";      Recursive = $false;     Patterns = "*.php" }
-	@{ Path = "inc";    Recursive = $false;     Patterns = "*.php" }
+	@{ Path = "inc";    Recursive = $false;     Patterns = "config.php mock_*.php" }
     @{ Path = "js";     Recursive = $false;     Patterns = "fd_dash.js fd_script.js" }
     @{ Path = "css";    Recursive = $false;     Patterns = "*.css" }
 )
