@@ -209,8 +209,8 @@ class Lx_Lager
 		} else {			
 			$lArtikelId = $row_2['lArtikelId'];
 			$dftBestand = $row_2['Bestand'] + $dftMenge;
-		
-			$query_LagerBestand = "UPDATE F1.FK_LagerBestand SET Bestand='".$dftBestand."', System_updated='".$System_updated."' WHERE lId='".$lId."'";
+// Deactivated in DEV phase
+//$query_LagerBestand = "UPDATE F1.FK_LagerBestand SET Bestand='".$dftBestand."', System_updated='".$System_updated."' WHERE lId='".$lId."'"; 
 		}
 //echo $query_LagerBestand."\n\n";
 	$this->db_lx->query($query_LagerBestand);
@@ -234,7 +234,8 @@ class Lx_Lager
 		
 		$LX_ID_query = "UPDATE F1.LX_ID SET NEW_ID=".$LX_NEW_ID." WHERE TABELLE_ID='39'";
 //echo $LX_ID_query."\n\n";
-	$this->db_lx->query($LX_ID_query);
+// Deactivated in DEV phase
+//$this->db_lx->query($LX_ID_query);
 		/***
 		LX_ID END
 		***/

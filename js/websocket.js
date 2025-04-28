@@ -42,14 +42,17 @@ async function connectWebSocket() {
         try {
             const message = JSON.parse(event.data);
             console.log('Received WebSocket message:', message);
-
-            if (message.type === 'initial_state') {
-                // Clear existing UI
+    
+            // Handle case where message is an array (malformed initial_state)
+            let messagesToProcess = [];
+            if (Array.isArray(message)) {
+                console.warn('Received malformed message as array, treating as events:', message);
+                messagesToProcess = message; // Treat the array as a list of messages
+            } else if (message.type === 'initial_state') {
                 document.querySelectorAll('.drag-inner-list').forEach(column => {
                     column.innerHTML = '';
                 });
-
-                // Process initial orders
+    
                 if (message.data.orders) {
                     for (const orderMsg of message.data.orders) {
                         if (orderMsg.type === 'order_created') {
@@ -57,8 +60,7 @@ async function connectWebSocket() {
                         }
                     }
                 }
-
-                // Process initial events
+    
                 if (message.data.events) {
                     for (const eventMsg of message.data.events) {
                         if (eventMsg.type === 'event_created') {
@@ -66,23 +68,32 @@ async function connectWebSocket() {
                         }
                     }
                 }
-
-                // Apply LocalStorage states after rendering
+    
                 const { orders, virtualOrders } = await window.utils.loadOrders();
                 render.applyOrders(orders, false);
                 render.applyOrders(virtualOrders, true);
-            } else if (message.type === 'order_created') {
-                await handleOrderCreated(message.data);
-            } else if (message.type === 'order_updated') {
-                await handleOrderUpdated(message.data);
-            } else if (message.type === 'order_deleted') {
-                await handleOrderDeleted(message.data);
-            } else if (message.type === 'event_created') {
-                await handleEventCreated(message.data);
-            } else if (message.type === 'event_updated') {
-                await handleEventUpdated(message.data);
-            } else if (message.type === 'event_deleted') {
-                await handleEventDeleted(message.data);
+                return; // Exit after handling initial_state
+            } else {
+                messagesToProcess = [message]; // Single message
+            }
+    
+            // Process individual messages (e.g., array of events or single message)
+            for (const msg of messagesToProcess) {
+                if (msg.type === 'order_created') {
+                    await handleOrderCreated(msg.data);
+                } else if (msg.type === 'event_created') {
+                    await handleEventCreated(msg.data);
+                } else if (msg.type === 'order_updated') {
+                    await handleOrderUpdated(msg.data);
+                } else if (msg.type === 'order_deleted') {
+                    await handleOrderDeleted(msg.data);
+                } else if (msg.type === 'event_updated') {
+                    await handleEventUpdated(msg.data);
+                } else if (msg.type === 'event_deleted') {
+                    await handleEventDeleted(msg.data);
+                } else {
+                    console.warn('Unknown message type:', msg.type);
+                }
             }
         } catch (e) {
             console.error('Failed to parse WebSocket message:', event.data, e);
@@ -100,13 +111,13 @@ async function connectWebSocket() {
 }
 
 async function handleOrderCreated(order) {
+    console.log('Handling order creation:', order);
     const column = document.getElementById(`column-${order.Status}`);
     if (!column) {
         console.warn(`Column not found for status ${order.Status}`);
         return;
     }
 
-    // Check if order already exists
     const existingOrder = document.getElementById(order.AuftragId);
     if (existingOrder) {
         console.log(`Order ${order.AuftragId} already exists, updating instead`);
@@ -114,13 +125,13 @@ async function handleOrderCreated(order) {
         return;
     }
 
-    const isVirtual = order.AuftragId.startsWith('V_') || order.AuftragId.startsWith('E_');
+    const auftragId = String(order.AuftragId);
+    const isVirtual = auftragId.startsWith('V_') || auftragId.startsWith('E_');
     const html = render.renderItem(order, isVirtual);
     column.insertAdjacentHTML('beforeend', html);
     console.log(`Added order ${order.AuftragId} to column ${order.Status}`);
     utils.sortColumn(column);
 
-    // Update LocalStorage
     window.ordersState = await utils.saveOrder(order, isVirtual);
 }
 

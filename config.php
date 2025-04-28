@@ -3,23 +3,25 @@
 define('APP_ROOT', __DIR__);
 
 // Application mode: 'online' for database, 'offline' for dummy data
-define('APP_MODE', 'offline');
+define('APP_MODE', 'online');
 
-// Database configurations
+// Database configurations for SQL Anywhere (db_lx) and MySQL (db_fd)
+//   function __construct($FD_HST="127.0.0.1", $FD_UID="ferrodom", $FD_PWD="kitemurt2", $FD_DB="lx_fd", $FD_PORT=3306, $charset = 'utf8') {
 define('DATABASES', [
     'sybase_erp' => [
         'type' => 'sybase',
         'strategy' => 'trigger',
-        'dsn' => 'sqlanywhere:uid=your_user;pwd=your_password;DatabaseName=erp_db',
+        'dsn' => 'Host=FERROSRV;ServerName=LXDBSRV;DBN=F2;UID=U0;PWD=ef41959cd6c24908',
         'changes_table' => 'changes',
         'enabled' => APP_MODE === 'online'
     ],
     'mysql_erp' => [
         'type' => 'mysql',
         'strategy' => 'trigger',
-        'dsn' => 'mysql:host=localhost;dbname=erp_db',
-        'username' => 'your_mysql_user',
-        'password' => 'your_mysql_password',
+        'dsn' => 'Host=FERROSRV;DBN=lx_fd;Port=3306',
+        'username' => 'ferrodom',
+        'password' => 'kitemurt2',
+        'charset' => 'utf8',
         'changes_table' => 'changes',
         'enabled' => APP_MODE === 'online'
     ]

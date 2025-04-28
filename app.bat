@@ -14,7 +14,10 @@ if "%1"=="" (
 
 if /i "%1"=="start" (
     echo Starting services...
-
+	
+	:: Delete old logs
+	del %CD%\logs\*.log
+	
     :: Start WebSocket service
     start "FD_SCREEN_WebSocket" /b %PHP_EXEC% %WEBSOCKET_SCRIPT%
     if !ERRORLEVEL! equ 0 (

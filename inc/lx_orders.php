@@ -1,5 +1,6 @@
 <?php
 include 'lx_artikel.php';
+include 'lx_lager.php';
 
 class Lx_Orders 
 {
@@ -64,7 +65,7 @@ class Lx_Orders
                 error_log("Invalid or reserved AuftragId: $auftragsNr, Row: " . print_r($row, true));
                 continue;
             }
-            $data[$auftragsNr]['AuftragId'] = $row['AuftragId'];
+            $data[$auftragsNr]['AuftragId'] = (string)$row['AuftragId'];
             $data[$auftragsNr]['AuftragsNr'] = $row['AuftragsNr'];
             $data[$auftragsNr]['AuftragsKennung'] = $row['AuftragsKennung'] ?: 1;
             $data[$auftragsNr]['Datum_Erfassung'] = $row['Datum_Erfassung'];
@@ -202,7 +203,8 @@ class Lx_Orders
     public function UpdateOrderPosition($AuftragsNr, $Pos, $Artikel_Menge, $lArtikelReservierungID, $AuftragsKennung) {
         $query = "UPDATE F1.FK_AuftragPos SET Artikel_Menge='".$Artikel_Menge."', Artikel_Preisfaktor='".$Artikel_Menge."' 
             WHERE AuftragsNr='".$AuftragsNr."' AND AuftragsKennung = ".$AuftragsKennung." AND PosNr='".$Pos."'";
-        $this->db_lx->query($query);
+// Deactivated in DEV phase
+//$this->db_lx->query($query);
         
         $query = "SELECT * FROM F1.FK_Artikelreservierung WHERE lID = '".$lArtikelReservierungID."'";
         $res = $this->db_lx->query($query);
@@ -210,7 +212,8 @@ class Lx_Orders
         
         if ($row) {
             $query = "UPDATE F1.FK_Artikelreservierung SET dftResMenge = '".$Artikel_Menge."' WHERE lID = '".$lArtikelReservierungID."'";        
-            $this->db_lx->query($query);
+// Deactivated in DEV phase
+//$this->db_lx->query($query);
         }
     }
     
@@ -346,15 +349,16 @@ class Lx_Orders
         } else {
             $query = "UPDATE F1.FK_Tag_Zuordnung SET lTagId ='".$TagId."' WHERE lAuftragId = '".$AuftragId."'";
         }
-        
-        $res = $this->db_lx->query($query);
+// Deactivated in DEV phase
+// $res = $this->db_lx->query($query); //Deactivated for now
         return $res;
     }
     
     public function SetDeliveryTime($AuftragId, $DeliveryTime) {
         if (!$AuftragId || intval($AuftragId) >= 99999 || strpos($AuftragId, 'V_') === 0 || strpos($AuftragId, 'E_') === 0) return;
         $query = "UPDATE F1.FK_Auftrag SET szUserdefined1 = '".$DeliveryTime."' WHERE SheetNr = '".$AuftragId."'";
-        $res = $this->db_lx->query($query);
+// Deactivated in DEV phase
+//$res = $this->db_lx->query($query);
         return $res;
     }
     

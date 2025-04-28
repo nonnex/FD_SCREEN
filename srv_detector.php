@@ -2,6 +2,9 @@
 // Require config.php (which defines APP_ROOT)
 require_once __DIR__ . '/config.php';
 require_once APP_ROOT . '/vendor/autoload.php';
+require_once APP_ROOT . '/inc/lx_orders.php'; // Lx_Orders einbinden
+require_once APP_ROOT . '/inc/db/db_lx.php'; // DB_LX einbinden
+require_once APP_ROOT . '/inc/db/db_fd.php'; // DB_FD einbinden
 
 use WebSocket\Client;
 use WebSocket\Connection;
@@ -15,10 +18,12 @@ class ChangeDetectorMiddleware {
     private $dummyOrders;
     private $dummyEvents;
     private $isConnected;
+    private $lxOrders; // Lx_Orders Instanz
 
     public function __construct($loop) {
         $this->loop = $loop;
         $this->isConnected = false;
+        $this->lxOrders = new Lx_Orders(); // Lx_Orders initialisieren
         $this->dummyOrders = $this->loadDummyOrders();
         $this->dummyEvents = $this->loadDummyEvents();
         $this->connectToWebSocket();
@@ -84,6 +89,52 @@ class ChangeDetectorMiddleware {
         ];
     }
 
+    private function loadInitialState() {
+        if (APP_MODE === 'online') {
+            $this->log("Loading initial state from database (online mode)");
+            try {
+                // Daten aus der Datenbank laden
+                $ordersData = $this->lxOrders->GetAllOpenOrdersFromLX();
+                $orders = array_values($ordersData); // Array umformatieren
+
+                // Mindestbestand-Auftrag hinzufügen (falls nötig)
+                $minOrder = $this->lxOrders->CreateMindestbestandOrder();
+                if (!empty($minOrder['Positionen'])) {
+                    $orders[] = $minOrder;
+                }
+
+                // Events (z. B. Mindestbestand-Events) könnten hier ebenfalls geladen werden
+                $events = $this->dummyEvents; // Platzhalter, da keine Event-Daten aus der Datenbank geladen werden
+
+                // In das erwartete Format umwandeln
+                $formattedOrders = array_map(function ($order) {
+                    return ['type' => 'order_created', 'data' => $order];
+                }, $orders);
+                $formattedEvents = array_map(function ($event) {
+                    return ['type' => 'event_created', 'data' => $event];
+                }, $events);
+
+                return [
+                    'orders' => $formattedOrders,
+                    'events' => $formattedEvents
+                ];
+            } catch (\Exception $e) {
+                $this->log("Failed to load data from database: {$e->getMessage()}");
+                return ['orders' => [], 'events' => []]; // Fallback bei Fehler
+            }
+        } else {
+            $this->log("Loading initial state from dummy data (offline mode)");
+            return [
+                'orders' => array_map(function ($order) {
+                    return ['type' => 'order_created', 'data' => $order];
+                }, $this->dummyOrders),
+                'events' => array_map(function ($event) {
+                    return ['type' => 'event_created', 'data' => $event];
+                }, $this->dummyEvents)
+            ];
+        }
+    }
+
     private function connectToWebSocket() {
         try {
             $this->wsClient = new Client(WEBSOCKET_SERVER['uri']);
@@ -94,20 +145,15 @@ class ChangeDetectorMiddleware {
                     $this->isConnected = true;
                     $this->log("Connected to WebSocket server at " . WEBSOCKET_SERVER['uri']);
 
-                    // Send initial state
+                    // Initial state basierend auf APP_MODE laden
                     $initialState = [
                         'type' => 'initial_state',
-                        'data' => [
-                            'orders' => array_map(function ($order) {
-                                return ['type' => 'order_created', 'data' => $order];
-                            }, $this->dummyOrders),
-                            'events' => array_map(function ($event) {
-                                return ['type' => 'event_created', 'data' => $event];
-                            }, $this->dummyEvents)
-                        ]
+                        'data' => $this->loadInitialState()
                     ];
-                    $connection->text(json_encode($initialState));
-                    $this->log("Sent initial state: " . json_encode($initialState));
+                    $jsonMessage = json_encode($initialState);
+                    $this->log("Sending initial state: " . $jsonMessage);
+                    $connection->text($jsonMessage);
+                    $this->log("Sent initial state successfully");
                 })
                 ->onText(function (Client $client, Connection $connection, Message $message) {
                     $this->log("Received from WebSocket: " . $message->getContent());
@@ -141,6 +187,12 @@ class ChangeDetectorMiddleware {
     private function checkForChanges() {
         if (APP_MODE === 'offline') {
             $this->simulateChange();
+        } else {
+            // Hier könntest du Logik hinzufügen, um Änderungen in der Datenbank zu erkennen
+            // Zum Beispiel durch Prüfen der "changes"-Tabelle (definiert in DATABASES)
+            $this->log("Checking for database changes (online mode)");
+            // Beispiel: Daten neu laden und vergleichen
+            // Für dieses Beispiel lassen wir es vorerst weg, da es komplexer ist
         }
     }
 
