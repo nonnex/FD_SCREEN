@@ -3,7 +3,7 @@
 define('APP_ROOT', __DIR__);
 
 // Application mode: 'online' for database, 'offline' for dummy data
-define('APP_MODE', 'online');
+define('APP_MODE', 'offline');
 
 // Database configurations for SQL Anywhere (db_lx) and MySQL (db_fd)
 //   function __construct($FD_HST="127.0.0.1", $FD_UID="ferrodom", $FD_PWD="kitemurt2", $FD_DB="lx_fd", $FD_PORT=3306, $charset = 'utf8') {

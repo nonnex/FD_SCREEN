@@ -290,6 +290,218 @@ function initUI() {
         await sendShowPos(AuftragId, State);
     });
 
+// Pallet Form Dialog for Versandvorbereitung (Status 3)
+$('body').on('click', '.delivery-button', function(event) {
+    const $this = $(this);
+    const orderEl = $this.closest('li');
+    const AuftragId = orderEl.attr('id');
+    const Status = parseInt(orderEl.data('status') || 0);
+    
+    // Check if the order is in Versandvorbereitung (Status 3) and icon is vorb.svg
+    if (Status === 3 && $this.attr('src') && $this.attr('src').indexOf('vorb.svg') !== -1) {
+            event.preventDefault();
+            console.log('Versandvorbereitung Icon geklickt für AuftragId: ' + AuftragId);
+            showPalletFormDialog(AuftragId);
+        }
+    // Otherwise, let the default form submission handler process it
+});
+
+ // Function to show pallet information form dialog using Bootstrap Modal
+function showPalletFormDialog(AuftragId) {
+    console.log('showPalletFormDialog aufgerufen für AuftragId: ' + AuftragId);
+    // Entferne vorhandene Modals und jQuery UI Dialoge, um Konflikte zu vermeiden
+    $('#palletModal').remove();
+    $('#dialog').html('').hide();
+    
+    // Erstelle ein neues Modal
+    console.log('Modal-Element wird erstellt.');
+    const modalHtml = `
+        <div class="modal fade" id="palletModal" tabindex="-1" role="dialog" aria-labelledby="palletModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="palletModalLabel">Paletteninformationen für Auftrag ${AuftragId}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="pallet-form-container">
+                            <div id="pallet-entries">
+                                <div class="pallet-entry" data-index="1">
+                                    <h4>Position 1</h4>
+                                    <div class="form-group">
+                                        <label>Palettenart:</label>
+                                        <select class="form-control pallet-type">
+                                            <option value="einweg">Einweg</option>
+                                            <option value="eu">EU</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Anzahl Paletten:</label>
+                                        <input type="number" class="form-control pallet-count" value="1" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Länge (cm):</label>
+                                        <input type="number" class="form-control pallet-length" value="80" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Breite (cm):</label>
+                                        <input type="number" class="form-control pallet-width" value="120" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Höhe (cm):</label>
+                                        <input type="text" class="form-control pallet-height" placeholder="optional">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Gewicht (kg):</label>
+                                        <input type="text" class="form-control pallet-weight" placeholder="optional">
+                                    </div>
+                                    <button type="button" class="btn btn-danger remove-pallet-btn" data-index="1">Entfernen</button>
+                                </div>
+                            </div>
+                            <button type="button" id="add-pallet-btn" class="btn btn-primary">Weitere Position hinzufügen</button>
+                            <hr>
+                            <button type="button" id="save-pallet-data-btn" class="btn btn-success">Speichern</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    let dialog = $('#palletModal');
+    console.log('Modal-Element erstellt:', dialog);
+    
+    // Show the modal
+    dialog.modal('show');
+    console.log('Bootstrap Modal geöffnet für AuftragId: ' + AuftragId);
+    
+    // Add event listeners once the modal is shown
+    dialog.on('shown.bs.modal', function () {
+        // Add pallet position
+        $('#add-pallet-btn').off('click').on('click', function() {
+            const entries = $('.pallet-entry');
+            const newIndex = entries.length + 1;
+            const newEntryHtml = `
+                <div class="pallet-entry" data-index="${newIndex}">
+                    <h4>Position ${newIndex}</h4>
+                    <div class="form-group">
+                        <label>Palettenart:</label>
+                        <select class="form-control pallet-type">
+                            <option value="einweg">Einweg</option>
+                            <option value="eu">EU</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Anzahl Paletten:</label>
+                        <input type="number" class="form-control pallet-count" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Länge (cm):</label>
+                        <input type="number" class="form-control pallet-length" value="80" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Breite (cm):</label>
+                        <input type="number" class="form-control pallet-width" value="120" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Höhe (cm):</label>
+                        <input type="text" class="form-control pallet-height" placeholder="optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Gewicht (kg):</label>
+                        <input type="text" class="form-control pallet-weight" placeholder="optional">
+                    </div>
+                    <button type="button" class="btn btn-danger remove-pallet-btn" data-index="${newIndex}">Entfernen</button>
+                </div>
+            `;
+            $('#pallet-entries').append(newEntryHtml);
+        });
+        
+        // Remove pallet position
+        $('#pallet-entries').off('click', '.remove-pallet-btn').on('click', '.remove-pallet-btn', function() {
+            const index = $(this).data('index');
+            $(`.pallet-entry[data-index="${index}"]`).remove();
+            // Reindex remaining entries
+            $('.pallet-entry').each(function(i, entry) {
+                const newIndex = i + 1;
+                $(entry).attr('data-index', newIndex);
+                $(entry).find('h4').text(`Position ${newIndex}`);
+                $(entry).find('.remove-pallet-btn').attr('data-index', newIndex);
+            });
+        });
+        
+        // Save pallet data
+        $('#save-pallet-data-btn').off('click').on('click', async function() {
+            const palletData = [];
+            $('.pallet-entry').each(function() {
+                const entry = $(this);
+                const data = {
+                    type: entry.find('.pallet-type').val(),
+                    count: parseInt(entry.find('.pallet-count').val()) || 1,
+                    length: parseInt(entry.find('.pallet-length').val()) || 80,
+                    width: parseInt(entry.find('.pallet-width').val()) || 120,
+                    height: entry.find('.pallet-height').val() || '',
+                    weight: entry.find('.pallet-weight').val() || ''
+                };
+                palletData.push(data);
+            });
+            
+            console.log(`Saving pallet data for Auftrag ${AuftragId}:`, palletData);
+            // Save to LocalStorage
+            const { orders } = await utils.loadOrders();
+            if (orders[AuftragId]) {
+                orders[AuftragId].PalletData = palletData;
+                window.ordersState = await utils.saveOrder(orders[AuftragId], false);
+            }
+            dialog.modal('hide');
+        });
+    });
+    
+    // Clean up event listeners when modal is hidden
+    dialog.on('hidden.bs.modal', function () {
+        console.log('Bootstrap Modal geschlossen für AuftragId: ' + AuftragId);
+        $('#add-pallet-btn').off('click');
+        $('#pallet-entries').off('click', '.remove-pallet-btn');
+        $('#save-pallet-data-btn').off('click');
+        // Reset pallet entries to initial state (one entry)
+        $('#pallet-entries').html(`
+            <div class="pallet-entry" data-index="1">
+                <h4>Position 1</h4>
+                <div class="form-group">
+                    <label>Palettenart:</label>
+                    <select class="form-control pallet-type">
+                        <option value="einweg">Einweg</option>
+                        <option value="eu">EU</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Anzahl Paletten:</label>
+                    <input type="number" class="form-control pallet-count" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Länge (cm):</label>
+                    <input type="number" class="form-control pallet-length" value="80" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Breite (cm):</label>
+                    <input type="number" class="form-control pallet-width" value="120" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Höhe (cm):</label>
+                    <input type="text" class="form-control pallet-height" placeholder="optional">
+                </div>
+                <div class="form-group">
+                    <label>Gewicht (kg):</label>
+                    <input type="text" class="form-control pallet-weight" placeholder="optional">
+                </div>
+                <button type="button" class="btn btn-danger remove-pallet-btn" data-index="1">Entfernen</button>
+            </div>
+        `);
+    });
+}
     showTime();
 }
 

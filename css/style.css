@@ -724,3 +724,157 @@ input[type="button"].button_back:hover, input[type="submit"].button_back:hover {
 .apply4job {
   cursor: pointer;
 }
+/* Pallet Form Dialog Styles */
+#pallet-form-container {
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+.pallet-entry {
+  background-color: var(--background-card);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: var(--spacing-medium);
+  margin-bottom: var(--spacing-large);
+}
+
+.pallet-entry h4 {
+  margin-top: 0;
+  color: var(--text-color);
+  font-size: var(--font-size-large);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-medium);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-small);
+  color: var(--text-color);
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--spacing-small);
+  background-color: var(--background-body);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--background-button-hover);
+}
+
+.btn {
+  padding: var(--spacing-small) var(--spacing-medium);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  margin-right: var(--spacing-small);
+  margin-bottom: var(--spacing-small);
+}
+
+.btn-primary {
+  background-color: var(--background-button);
+  color: var(--text-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--background-button-hover);
+}
+
+.btn-success {
+  background-color: var(--background-header-approved);
+  color: var(--text-color-tertiary);
+}
+
+.btn-success:hover {
+  background-color: darken(#00b961, 10%);
+}
+
+.btn-danger {
+  background-color: var(--background-header-on-hold);
+  color: var(--text-color-tertiary);
+}
+
+.btn-danger:hover {
+  background-color: darken(#fb7d44, 10%);
+}
+
+.ui-widget-overlay {
+    z-index: 9998 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.pallet-dialog {
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+/* Bootstrap Modal Overrides for Visibility */
+.modal {
+    z-index: 9999 !important;
+    display: none; /* Wird von Bootstrap JS auf block gesetzt, wenn gezeigt */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.modal-dialog {
+    z-index: 10000 !important;
+    position: relative !important;
+    margin: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background-color: transparent !important;
+}
+
+.modal-content {
+    background-color: var(--background-body) !important;
+    color: var(--text-color) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 5px !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.modal-header, .modal-body, .modal-footer {
+    background-color: var(--background-body) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color) !important;
+}
+
+.btn-close {
+    filter: invert(1) !important; /* Für Sichtbarkeit auf dunklem Hintergrund */
+}

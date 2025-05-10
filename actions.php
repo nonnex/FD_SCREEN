@@ -1,8 +1,8 @@
 <?php
-include 'inc/db/db_lx.php';
-include 'inc/db/db_fd.php';
-include 'inc/lx_orders.php';
-include 'inc/lx_lager.php';
+include_once 'inc/db/db_lx.php';
+include_once 'inc/db/db_fd.php';
+include_once 'inc/lx_orders.php';
+include_once 'inc/lx_lager.php';
 
 $Lx_Artikel = new Lx_Artikel();
 $Lx_Orders = new Lx_Orders();
