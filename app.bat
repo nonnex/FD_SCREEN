@@ -9,6 +9,7 @@ set "DETECTOR_LOG=%CD%\logs\middleware.log"
 
 if "%1"=="" (
     echo Usage: app.bat [start^|stop^|monitor [-all^|-sockets^|-detector]]
+    echo Note: In PowerShell, use .\app.bat to run this script.
     exit /b 1
 )
 
@@ -40,21 +41,20 @@ if /i "%1"=="start" (
 if /i "%1"=="stop" (
     echo Stopping services...
 
-    :: Stop WebSocket service
-    taskkill /FI "WINDOWTITLE eq FD_SCREEN_WebSocket" /T /F >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        echo WebSocket service stopped.
-    ) else (
-        echo WebSocket service not running or failed to stop.
+    :: Stop processes listening on port 8081 (WebSocket service)
+    echo Stopping WebSocket service on port 8081...
+    for /f "tokens=5" %%p in ('netstat -aon ^| findstr :8081') do (
+        taskkill /PID %%p /F >nul 2>&1
+        if !ERRORLEVEL! equ 0 (
+            echo Process with PID %%p stopped.
+        ) else (
+            echo Failed to stop process with PID %%p.
+        )
     )
 
-    :: Stop Change Detector service
-    taskkill /FI "WINDOWTITLE eq FD_SCREEN_ChangeDetector" /T /F >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        echo Change Detector service stopped.
-    ) else (
-        echo Change Detector service not running or failed to stop.
-    )
+    :: Note: Detector service port is not specified, adjust if needed
+    echo Note: Detector service stopping is not implemented yet due to unspecified port.
+    echo If Detector service uses a specific port, add similar logic here.
 
     exit /b 0
 )
@@ -83,4 +83,5 @@ if /i "%1"=="monitor" (
 )
 
 echo Usage: app.bat [start^|stop^|monitor [-all^|-sockets^|-detector]]
+echo Note: In PowerShell, use .\app.bat to run this script.
 exit /b 1

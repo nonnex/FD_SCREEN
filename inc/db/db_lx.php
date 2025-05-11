@@ -9,10 +9,7 @@ class DB_LX
         $dbConfig = DATABASES['sybase_erp'];
         $this->connection = @sasql_connect($dbConfig['dsn']);
         if (!$this->connection) {
-            die('
-                <center><br><br>Die Applikation wird derzeit gewartet, oder ein Backup findet statt.<br>Bitte in einigen Minuten diese Seite neu laden (F5)</center>
-                <script>setInterval(function() { window.location.reload(1); }, 60000);</script>
-            ');
+            die();
         }
     }
 
