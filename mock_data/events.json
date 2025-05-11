@@ -2,8 +2,8 @@
     {
         "type": "event_created",
         "data": {
-            "AuftragId": "E_100000",
-            "AuftragsNr": "EVENT_001",
+            "AuftragId": "500000",
+            "AuftragsNr": "500000",
             "AuftragsKennung": 1,
             "Datum_Erfassung": "2025-04-28 09:00:00",
             "BestellNr": "Event: Team Meeting",

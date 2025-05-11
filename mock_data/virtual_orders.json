@@ -2,8 +2,8 @@
     {
         "type": "order_created",
         "data": {
-            "AuftragId": "V_99999",
-            "AuftragsNr": "99999",
+            "AuftragId": "100000",
+            "AuftragsNr": "100000",
             "AuftragsKennung": 1,
             "Datum_Erfassung": "2025-04-27 12:00:00",
             "BestellNr": "Mindestbestand",

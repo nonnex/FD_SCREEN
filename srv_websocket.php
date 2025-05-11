@@ -40,6 +40,20 @@ class OrderUpdateServer implements MessageComponentInterface {
         $this->log("Broadcasted message: " . $message);
     }
 
+    public function broadcastMockData() {
+        $mockOrders = json_decode(file_get_contents(__DIR__ . '/mock_data/orders.json'), true);
+        $mockVirtualOrders = json_decode(file_get_contents(__DIR__ . '/mock_data/virtual_orders.json'), true);
+        $mockEvents = json_decode(file_get_contents(__DIR__ . '/mock_data/events.json'), true);
+        
+        $message = json_encode([
+            'orders' => array_column($mockOrders, 'data'),
+            'virtual_orders' => array_column($mockVirtualOrders, 'data'),
+            'events' => array_column($mockEvents, 'data')
+        ]);
+        
+        $this->broadcast($message);
+    }
+
     public function log($message) {
         if (LOGGING['enabled']) {
             $logFile = LOGGING['websocket_log'];
@@ -79,6 +93,13 @@ try {
             $loop
         );
         $server->log("Starting WebSocket server without SSL (ws://)");
+    }
+
+    if (defined('APP_MODE') && APP_MODE === 'offline') {
+        $server->log("Running in offline mode, broadcasting mock data");
+        $loop->addPeriodicTimer(10, function() use ($server) {
+            $server->broadcastMockData();
+        });
     }
 
     $loop->run();

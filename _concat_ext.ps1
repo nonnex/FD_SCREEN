@@ -22,7 +22,8 @@ $add_blank_lines = $true
 # Source definitions (array of hashtables)
 # Format: @{ Path = "path"; Recursive = $true/$false; Patterns = "pattern1 pattern2 ..." }
 $sources = @(
-    @{ Path = "frontend";   Recursive = $true;     Patterns = "*.tsx *.css" }
+    @{ Path = "frontend/public";   Recursive = $true;     Patterns = "*.ts *.tsx *.css" },
+    @{ Path = "frontend/src";   Recursive = $true;     Patterns = "*.ts *.tsx *.css" }
 )
 
 # --------------------------------------
