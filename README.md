@@ -1,8 +1,5 @@
-SQL Anywhere Client: https://help.sap.com/docs/SUPPORT_CONTENT/sqlany/3362971128.html
-SQL Anywhere PHP Ext.: https://help.sap.com/docs/SAP_SQL_Anywhere/98ad9ec940e2465695685d98e308dff5/3bdc79826c5f101489fc8ca6f037a237.html
-
-
-
+# SQL Anywhere Client
+https://help.sap.com/docs/SUPPORT_CONTENT/sqlany/3362971128.html
 
 # Database Setup (Trigger-Based Strategy)
 For the trigger-based strategy to work, you need to set up the changes table and triggers in your Sybase SQL Anywhere database (and MySQL if applicable). Here’s the SQL to create them:
