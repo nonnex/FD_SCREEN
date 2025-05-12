@@ -1,5 +1,17 @@
-# SQL Anywhere Client
-https://help.sap.com/docs/SUPPORT_CONTENT/sqlany/3362971128.html
+# Install SQL Anywhere Client
+> https://help.sap.com/docs/SUPPORT_CONTENT/sqlany/3362971128.html
+
+# Install Backend
+> composer_install.bat
+> .\App.bat start
+
+# Install frontend
+> cd frontend
+> npm install
+> npm run dev (or 'npm run build' when production ready)
+
+
+
 
 # Database Setup (Trigger-Based Strategy)
 For the trigger-based strategy to work, you need to set up the changes table and triggers in your Sybase SQL Anywhere database (and MySQL if applicable). Here’s the SQL to create them:
