@@ -19,7 +19,7 @@ function renderItem(item, isVirtual = false) {
     const lieferterminDate = new Date(Liefertermin);
     const erfassungsdatumDate = new Date(Datum_Erfassung);
     const bc = utils.colorMapping[Status] || '00b961';
-    const strKunde = `<span style="padding-left:2px;font-size:14px;">${KundenMatchcode}</span>`;
+    const strKunde = `${KundenMatchcode}`;
     const showPosStyle = ShowPos ? '' : 'display:none;';
     const stateImg = ShowPos ? 'up.png' : 'dn.png';
     const strTags = Tags.map(tag => `[${tag.lTagId}:${tag.szName}]`).join('');
