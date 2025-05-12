@@ -391,7 +391,7 @@ class Lx_Orders
             if (file_exists('img/clients/'.$val['KundenNr'].'.png')) {
                 $StrKunde = '<img src="img/clients/'.$val['KundenNr'].'.png" height="16px"/>';
             } else {
-                $StrKunde = '<span style="padding-left:2px;font-size:14px;">'.$val['KundenMatchcode'].'</span>';
+                $StrKunde = $val['KundenMatchcode'];
             }
             
             $ShowPos = $val['ShowPos'] ? '' : 'display:none;';
@@ -414,14 +414,14 @@ class Lx_Orders
             }
             
             if (@$val['Tags'][0]['lTagId']) {
-                if ($val['Tags'][0]['lTagId'] == 5 && !$DeliveryStatus['Status'])                $TagIcon = 'vorb.svg';
+                if ($val['Tags'][0]['lTagId'] == 5 && !$DeliveryStatus['Status'])               $TagIcon = 'vorb.svg';
                 if ($val['Tags'][0]['lTagId'] == 5 && $DeliveryStatus['Status'])                $TagIcon = 'delivery_0.svg';
                 if ($val['Tags'][0]['lTagId'] == 5 && $DeliveryStatus['Status'] == 'Booked')    $TagIcon = 'delivery_2.svg';
-                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] != 'Delivered')    $TagIcon = 'delivery_0.svg';
-                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] == 'Delivered')    $TagIcon = 'delivery_1.svg';
-                if ($val['Tags'][0]['lTagId'] == 2)                                            $TagIcon = 'inprod.svg';
-                if ($val['Tags'][0]['lTagId'] == 4)                                            $TagIcon = 'neu.svg';
-                if ($val['Tags'][0]['lTagId'] == 6)                                            $TagIcon = 'fakturieren.svg';
+                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] != 'Delivered') $TagIcon = 'delivery_0.svg';
+                if ($val['Tags'][0]['lTagId'] == 1 && $DeliveryStatus['Status'] == 'Delivered') $TagIcon = 'delivery_1.svg';
+                if ($val['Tags'][0]['lTagId'] == 2)                                             $TagIcon = 'inprod.svg';
+                if ($val['Tags'][0]['lTagId'] == 4)                                             $TagIcon = 'neu.svg';
+                if ($val['Tags'][0]['lTagId'] == 6)                                             $TagIcon = 'fakturieren.svg';
             }
             
             $TagIconEn = ($val['AuftragsKennung'] == 2 && $val['Tags'][0]['lTagId'] == 5 && stristr($val['szUserdefined2'], 'Schenker') != 'Schenker') ? '' : 'disabled';
